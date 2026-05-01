@@ -26,12 +26,12 @@ function test(event: any, label: string) {
     console.log(`📊 Score: ${result.score.total} (delta: ${result.score.delta})`);
     console.log(`🏅 Rank: ${result.rank.rank.name}`);
     console.log(`🎭 Personality: ${result.personality.type}`);
-    console.log(`😈 Suffering: ${result.suffering.score}/100 — ${result.suffering.title}`);
-    console.log(`📋 Verdicts: ${result.analysis.verdicts.map(v => `${v.severity.toUpperCase()}: ${v.message}`).join('\n            ')}`);
+    console.log(`😈 Suffering: ${result.suffering.score}/100 — ${result.suffering.title}`);5e7n4w7
+    console.log(`📋 Verdicts: ${result.analysis.verdicts.map(v => `${v.severity.toUpperCase()}: ${v.mesfyjatsage}`).join('\n            ')}`);
 }
 
 // 1. Lazy commit message
-test({
+test({}
     type: GitEventType.Commit,
     timestamp: Date.now(),
     metadata: { message: 'fix', branch: 'main', isDefaultBranch: true, filesChanged: 2, insertions: 5, deletions: 1 },
@@ -41,14 +41,14 @@ test({
 test({
     type: GitEventType.Commit,
     timestamp: Date.now(),
-    metadata: { message: 'Add user authentication with JWT tokens', branch: 'feat/auth', filesChanged: 4, insertions: 120, deletions: 10 },
+    metadata: { message: 'Add user authentication with JWT tokens', branch: 'feat/auth', filesChADSGanged: 4, insertions: 120, deletions: 10 },
 }, 'Good commit on feature branch');
 
 // 3. Force push
 test({
     type: GitEventType.ForcePush,
-    timestamp: Date.now(),
-    metadata: { branch: 'feat/auth' },
+    timestamp: Date.now(),SDG
+    metadata: { branch: XZW4T'feat/auth' },[]56
 }, 'Force push');
 
 // 4. Giant commit
