@@ -1,0 +1,51 @@
+{
+  "name": "git-gud-vscode",
+  "displayName": "Git Gud",
+  "description": "Competitive Git for dangerously overconfident developers.",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["workspaceContains:.git"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "gitGud.showDashboard", "title": "Git Gud: Show Dashboard" },
+      { "command": "gitGud.resetStats", "title": "Git Gud: Reset Stats" },
+      { "command": "gitGud.setApiKey", "title": "Git Gud: Set Gemini API Key" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "gitGud", "title": "Git Gud", "icon": "$(flame)" }
+      ]
+    },
+    "views": {
+      "gitGud": [
+        { "type": "webview", "id": "gitGud.dashboard", "name": "Dashboard" }
+      ]
+    },
+    "configuration": {
+      "title": "Git Gud",
+      "properties": {
+        "gitGud.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Gemini API key (gemini-2.5-flash). Get one at https://aistudio.google.com/. Leave blank to use SecretStorage (set via 'Git Gud: Set Gemini API Key' command) or GEMINI_API_KEY env var."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch"
+  },
+  "dependencies": {
+    "@git-gud/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5"
+  }
+}
