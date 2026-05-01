@@ -1,0 +1,29 @@
+{
+  "name": "git-gud-vscode",
+  "displayName": "Git Gud",
+  "description": "Competitive Git coaching with esports-style roasts",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "dist/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitGud.showStatus",
+        "title": "Git Gud: Show Status"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@git-gud/core": "*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5"
+  }
+}
