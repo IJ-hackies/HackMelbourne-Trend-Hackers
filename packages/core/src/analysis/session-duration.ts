@@ -73,14 +73,15 @@ export function analyzeSession(commitTimestamps: Date[]): SessionVerdict {
     }
   }
 
-  const sorted = [...commitTimestamps].sort((a, b) => a.getTime() - b.getTime());
-  const latestCommit = sorted[sorted.length - 1];
-  const hour = latestCommit.getHours();
-  if (hour >= SESSION_THRESHOLDS.lateNightStart && hour < SESSION_THRESHOLDS.lateNightEnd) {
+  const lateNightCommit = commitTimestamps.find(ts => {
+    const h = ts.getHours();
+    return h >= SESSION_THRESHOLDS.lateNightStart && h < SESSION_THRESHOLDS.lateNightEnd;
+  });
+  if (lateNightCommit) {
     return verdict(
       'warning',
       'late-night',
-      `Committing at ${latestCommit.getHours()}:${String(latestCommit.getMinutes()).padStart(2, '0')} AM. The code you write at 3 AM is the code you debug at 9 AM.`,
+      `Committing at ${lateNightCommit.getHours()}:${String(lateNightCommit.getMinutes()).padStart(2, '0')} AM. The code you write at 3 AM is the code you debug at 9 AM.`,
       'Late-night code has higher defect rates. If you must code late, at least write tests before you sleep.',
     );
   }

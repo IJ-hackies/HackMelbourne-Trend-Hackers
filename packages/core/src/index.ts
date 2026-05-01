@@ -26,6 +26,10 @@ export {
   analyzeBranchName,
   analyzeCommitSize,
   THRESHOLDS,
+  classifyRiskyAction,
+  analyzeSession,
+  SESSION_THRESHOLDS,
+  analyzeEvent,
 } from './analysis';
 
 // Stage 3 — Roast system

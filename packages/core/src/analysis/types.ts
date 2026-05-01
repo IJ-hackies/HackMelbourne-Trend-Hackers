@@ -7,6 +7,7 @@ export interface AnalysisVerdict {
   category: string;
   message: string;
   advice: string;
+  subject?: string;
 }
 
 export interface CommitMessageVerdict extends AnalysisVerdict {

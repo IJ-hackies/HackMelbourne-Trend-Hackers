@@ -23,8 +23,9 @@ function verdict(
   pattern: CommitMessageVerdict['pattern'],
   message: string,
   advice: string,
+  subject?: string,
 ): CommitMessageVerdict {
-  return { severity, category: 'commit-message', pattern, message, advice };
+  return { severity, category: 'commit-message', pattern, message, advice, subject };
 }
 
 export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
@@ -36,6 +37,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
       'too-short',
       'An empty commit message? You didn\'t even try.',
       'Every commit should describe what changed and why. Even one sentence helps.',
+      message,
     );
   }
 
@@ -45,6 +47,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
       'emoji-only',
       'Ah yes, the universal language of... emojis.',
       'Emojis are fine as prefixes, but the message still needs words describing the change.',
+      message,
     );
   }
 
@@ -54,6 +57,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
       'too-short',
       `"${message}" — truly a masterpiece of brevity.`,
       'Commit messages under 4 characters are never descriptive enough. Aim for a short sentence.',
+      message,
     );
   }
 
@@ -63,6 +67,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
       'all-caps',
       `"${message}" — I can hear you screaming through the commit log.`,
       'All-caps messages read like panic. Take a breath, then describe the change calmly.',
+      message,
     );
   }
 
@@ -75,6 +80,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
         'default-message',
         `"${message}" — at least change the default message.`,
         'Default/auto-generated messages give no context. Describe what the commit actually does.',
+        message,
       );
     }
   }
@@ -86,6 +92,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
       'generic',
       `"${message}" — that could mean literally anything.`,
       'Be specific: what did you change and why? "Fix login redirect loop" beats "fix".',
+      message,
     );
   }
 
@@ -95,6 +102,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
       'generic',
       `"${message}" — incredibly descriptive. Future you will love this.`,
       'A commit message should let someone understand the change without reading the diff.',
+      message,
     );
   }
 
@@ -105,6 +113,7 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
       'no-context',
       `"${message}" — a little more context would go a long way.`,
       'Try completing the sentence: "This commit [does what] because [why]."',
+      message,
     );
   }
 
@@ -113,5 +122,6 @@ export function analyzeCommitMessage(raw: string): CommitMessageVerdict {
     'clean',
     'Commit message looks reasonable. Shocking.',
     'Keep writing descriptive commit messages.',
+    message,
   );
 }

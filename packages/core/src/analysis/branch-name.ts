@@ -20,8 +20,9 @@ function verdict(
   pattern: BranchNameVerdict['pattern'],
   message: string,
   advice: string,
+  subject?: string,
 ): BranchNameVerdict {
-  return { severity, category: 'branch-name', pattern, message, advice };
+  return { severity, category: 'branch-name', pattern, message, advice, subject };
 }
 
 export function analyzeBranchName(branchName: string, isDefault: boolean): BranchNameVerdict {
@@ -33,6 +34,7 @@ export function analyzeBranchName(branchName: string, isDefault: boolean): Branc
       'default-branch',
       `Committing directly to ${name}? Bold strategy.`,
       'Create a feature branch. Direct commits to the default branch bypass code review and break CI.',
+      name,
     );
   }
 
@@ -42,6 +44,7 @@ export function analyzeBranchName(branchName: string, isDefault: boolean): Branc
       'bad-characters',
       `"${name}" has characters that will haunt your shell history.`,
       'Stick to alphanumeric characters, hyphens, and forward slashes. Avoid spaces and special characters.',
+      name,
     );
   }
 
@@ -51,6 +54,7 @@ export function analyzeBranchName(branchName: string, isDefault: boolean): Branc
       'too-long',
       `That branch name is ${name.length} characters. It's a branch, not a novel.`,
       `Keep branch names under ${MAX_BRANCH_LENGTH} characters. Long names are hard to type and read in logs.`,
+      name,
     );
   }
 
@@ -60,6 +64,7 @@ export function analyzeBranchName(branchName: string, isDefault: boolean): Branc
       'meaningless',
       `"${name}" tells absolutely nothing about what you're working on.`,
       'Name branches after the work: feat/user-auth, fix/login-redirect, chore/upgrade-deps.',
+      name,
     );
   }
 
@@ -69,6 +74,7 @@ export function analyzeBranchName(branchName: string, isDefault: boolean): Branc
       'no-prefix',
       `"${name}" doesn't follow a prefix convention.`,
       'Consider using prefixes like feat/, fix/, chore/ to categorize branches at a glance.',
+      name,
     );
   }
 
@@ -77,5 +83,6 @@ export function analyzeBranchName(branchName: string, isDefault: boolean): Branc
     'clean',
     'Branch name looks good. Someone taught you well.',
     'Keep using descriptive, prefixed branch names.',
+    name,
   );
 }

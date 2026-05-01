@@ -15,7 +15,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'commit-message' && v.pattern === 'too-short',
     generate: v => roast('savage',
-      `"${truncate(v.message, 20)}" — your commit message has fewer characters than a sneeze.`,
+      `"${truncate(v.subject ?? '', 20)}" — your commit message has fewer characters than a sneeze.`,
       'Write messages that complete: "This commit [does what] because [why]."',
     ),
   },
@@ -36,7 +36,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'commit-message' && v.pattern === 'generic',
     generate: v => roast('medium',
-      `"${truncate(v.message, 30)}" — the commit message equivalent of shrugging.`,
+      `"${truncate(v.subject ?? '', 30)}" — the commit message equivalent of shrugging.`,
       'Be specific: what file/feature changed and why?',
     ),
   },
@@ -143,7 +143,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'branch-name' && v.pattern === 'default-branch',
     generate: v => roast('savage',
-      `Pushing directly to ${truncate(v.message, 20)}? That's not bravery, that's a death wish.`,
+      `Pushing directly to ${truncate(v.subject ?? '', 20)}? That's not bravery, that's a death wish.`,
       'Create a feature branch. Always. No exceptions.',
     ),
   },
@@ -164,7 +164,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'branch-name' && v.pattern === 'meaningless',
     generate: v => roast('medium',
-      `"${truncate(v.message, 30)}" — a branch name that tells a story of... absolutely nothing.`,
+      `"${truncate(v.subject ?? '', 30)}" — a branch name that tells a story of... absolutely nothing.`,
       'Name branches after the work: feat/user-auth, fix/login-bug.',
     ),
   },
@@ -308,6 +308,27 @@ export const templates: RoastTemplate[] = [
     generate: () => roast('mild',
       'Your diff is mostly red. Thanos would approve.',
       'Verify nothing important was caught in the purge.',
+    ),
+  },
+  {
+    match: v => v.category === 'commit-size' && v.pattern === 'generated-only',
+    generate: () => roast('mild',
+      'A commit of purely generated files. Your code-to-effort ratio is technically infinite.',
+      'Consider adding generated files to .gitignore if they can be reproduced from source.',
+    ),
+  },
+  {
+    match: v => v.category === 'commit-size' && v.pattern === 'generated-only',
+    generate: () => roast('mild',
+      'Lock files, build artifacts, auto-generated code — a commit that wrote itself.',
+      'If these files are reproducible, they might belong in .gitignore instead of the repo.',
+    ),
+  },
+  {
+    match: v => v.category === 'commit-size' && v.pattern === 'generated-only',
+    generate: () => roast('mild',
+      'Congrats on committing files that a machine wrote. Very hands-off of you.',
+      'Keep generated files in their own commits so they don\'t clutter meaningful diffs.',
     ),
   },
 
