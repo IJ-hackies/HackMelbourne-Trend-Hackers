@@ -26,8 +26,15 @@ export {
   analyzeBranchName,
   analyzeCommitSize,
   THRESHOLDS,
-  classifyRiskyAction,
-  analyzeSession,
-  SESSION_THRESHOLDS,
-  analyzeEvent,
 } from './analysis';
+
+// Stage 3 — Roast system
+export { generateRoast, generateRoasts } from './roasts';
+export type { RoastTemplate } from './roasts';
+
+// Stage 3 — Scoring engine
+export { calculateScore, SEVERITY_MULTIPLIER, CATEGORY_POINTS } from './scoring';
+
+// Stage 3 — Rank system
+export { RANK_LADDER, evaluateRank } from './ranks';
+export type { RankEvaluation } from './ranks';

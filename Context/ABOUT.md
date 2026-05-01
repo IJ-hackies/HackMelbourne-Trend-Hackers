@@ -46,4 +46,4 @@ Intentionally overdramatic. Mimics competitive esports, ranked gaming, dramatic 
 
 ## Current state
 
-Fresh Next.js 16 scaffold. No monorepo structure, no extension, no core package yet. Everything needs to be built.
+Monorepo fully set up (Stage 1 complete). Git analysis engine built with all analyzers and tests (Stage 2 complete). Roast templates, scoring engine, and rank system implemented with tests (Stage 3 partially complete — achievements, suffering calculator, and personality classifier still needed). VS Code extension scaffold activates and imports core. Next.js 16 web package scaffolded. Stages 4–6 not yet started.
