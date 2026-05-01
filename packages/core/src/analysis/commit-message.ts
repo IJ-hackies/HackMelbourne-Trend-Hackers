@@ -50,7 +50,7 @@ export function analyzeCommitMessage(message: string): CommitMessageVerdict {
         };
     }
 
-    const severity = issues.length >= 3 ? 'critical' : issues.length >= 2 ? 'warning' : 'warning';
+    const severity = issues.length >= 3 ? 'critical' : issues.length >= 2 ? 'warning' : 'info';
 
     return {
         severity,
