@@ -28,13 +28,16 @@ Build the analysis functions in `packages/core/` that evaluate raw git data and 
 Build the personality layer and progression systems on top of the analysis engine.
 
 **Deliverables:**
-- ✅ Roast template system — procedural roast generation per event type, with genuine advice attached
+- ✅ Roast template system — 80+ procedural roast templates per event type, with genuine advice attached (retained as fallback)
+- ✅ AI roast generation — Ollama cloud API integration (`kimi-k2.6:cloud`) with toxic esports coach persona prompt, template fallback on API failure
+- ✅ Brainrot slang library — 40+ gen-z/internet slang entries with meanings and git-context examples, injected into AI prompt
+- ✅ `RoastConfig` type — API key, model, base URL configuration for AI roast generation
 - ✅ Scoring engine — calculates git skill rating from event history, tracks score changes per event
 - ✅ Rank system — rank thresholds, promotion/demotion logic, rank definitions
 - ✅ Achievement system — 10 achievements with unlock conditions and progress tracking
 - ✅ Teammate suffering calculator — 0–100 chaos score with escalating titles
 - ✅ Developer personality classifier — 7 archetypes (Commit Goblin, Chaos Mage, README Avoider, Monolith Merchant, Branch Hoarder, The Perfectionist, Night Crawler)
-- ✅ Unified `evaluate()` pipeline — single entry point returning complete EvaluationResult
+- ✅ Unified async `evaluate()` pipeline — single entry point returning `Promise<EvaluationResult>`, accepts optional `RoastConfig`
 
 ## Stage 4 — VS Code Extension MVP
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateRoast, generateRoasts } from '../generator';
+import { generateRoast, generateRoasts, generateTemplateRoast } from '../generator';
 import type { CommitMessageVerdict, BranchNameVerdict, CommitSizeVerdict, RiskyActionVerdict, SessionVerdict } from '../../analysis/types';
 
 const cleanVerdict: CommitMessageVerdict = {
@@ -18,16 +18,16 @@ const badVerdict: CommitMessageVerdict = {
   advice: 'Be specific.',
 };
 
-describe('generateRoast', () => {
+describe('generateTemplateRoast', () => {
   it('returns a valid Roast with non-empty fields', () => {
-    const roast = generateRoast(badVerdict);
+    const roast = generateTemplateRoast(badVerdict);
     expect(roast.message).toBeTruthy();
     expect(roast.advice).toBeTruthy();
     expect(['mild', 'medium', 'savage']).toContain(roast.severity);
   });
 
   it('falls back gracefully for clean verdicts', () => {
-    const roast = generateRoast(cleanVerdict);
+    const roast = generateTemplateRoast(cleanVerdict);
     expect(roast.severity).toBe('mild');
     expect(roast.message).toBeTruthy();
   });
@@ -40,7 +40,7 @@ describe('generateRoast', () => {
       message: 'Committing directly to main.',
       advice: 'Create a feature branch.',
     };
-    const roast = generateRoast(verdict);
+    const roast = generateTemplateRoast(verdict);
     expect(roast.message).toBeTruthy();
     expect(roast.advice).toBeTruthy();
   });
@@ -53,7 +53,7 @@ describe('generateRoast', () => {
       message: 'Hefty commit.',
       advice: 'Split it up.',
     };
-    const roast = generateRoast(verdict);
+    const roast = generateTemplateRoast(verdict);
     expect(roast.message).toBeTruthy();
   });
 
@@ -65,7 +65,7 @@ describe('generateRoast', () => {
       message: 'Force push detected.',
       advice: 'Don\'t.',
     };
-    const roast = generateRoast(verdict);
+    const roast = generateTemplateRoast(verdict);
     expect(roast.message).toBeTruthy();
   });
 
@@ -77,27 +77,42 @@ describe('generateRoast', () => {
       message: 'Late night coding.',
       advice: 'Sleep.',
     };
-    const roast = generateRoast(verdict);
+    const roast = generateTemplateRoast(verdict);
     expect(roast.message).toBeTruthy();
   });
 
   it('can produce different messages for the same input (randomness)', () => {
     const messages = new Set<string>();
     for (let i = 0; i < 50; i++) {
-      messages.add(generateRoast(badVerdict).message);
+      messages.add(generateTemplateRoast(badVerdict).message);
     }
     expect(messages.size).toBeGreaterThan(1);
   });
 });
 
-describe('generateRoasts', () => {
-  it('filters out clean verdicts', () => {
-    const roasts = generateRoasts([cleanVerdict, badVerdict]);
+describe('generateRoast (async, no API key = template fallback)', () => {
+  it('returns a valid Roast using templates when no config provided', async () => {
+    const roast = await generateRoast(badVerdict);
+    expect(roast.message).toBeTruthy();
+    expect(roast.advice).toBeTruthy();
+    expect(['mild', 'medium', 'savage']).toContain(roast.severity);
+  });
+
+  it('handles clean verdicts', async () => {
+    const roast = await generateRoast(cleanVerdict);
+    expect(roast.severity).toBe('mild');
+    expect(roast.message).toBeTruthy();
+  });
+});
+
+describe('generateRoasts (async)', () => {
+  it('filters out clean verdicts', async () => {
+    const roasts = await generateRoasts([cleanVerdict, badVerdict]);
     expect(roasts).toHaveLength(1);
   });
 
-  it('returns empty array for all-clean verdicts', () => {
-    const roasts = generateRoasts([cleanVerdict]);
+  it('returns empty array for all-clean verdicts', async () => {
+    const roasts = await generateRoasts([cleanVerdict]);
     expect(roasts).toHaveLength(0);
   });
 });

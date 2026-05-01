@@ -33,25 +33,26 @@ export {
   analyzeEvent,
 } from './analysis';
 
-// Stage 3 — Roast system
-export { generateRoast, generateRoasts } from './roasts';
-export type { RoastTemplate } from './roasts';
+// Roast system
+export { generateRoast, generateRoasts, generateTemplateRoast } from './roasts';
+export type { RoastTemplate, RoastConfig, BrainrotEntry } from './roasts';
+export { brainrotLibrary } from './roasts';
 
-// Stage 3 — Scoring engine
+// Scoring engine
 export { calculateScore, SEVERITY_MULTIPLIER, CATEGORY_POINTS } from './scoring';
 
-// Stage 3 — Rank system
+// Rank system
 export { RANK_LADDER, evaluateRank } from './ranks';
 export type { RankEvaluation } from './ranks';
 
-// Stage 3 — Achievement system
+// Achievement system
 export { ACHIEVEMENTS, checkAchievements } from './achievements';
 export type { AchievementDefinition } from './achievements';
 
-// Stage 3 — Personality & suffering
+// Personality & suffering
 export { calculateSuffering, classifyPersonality } from './personality';
 export type { SufferingResult, PersonalityResult } from './personality';
 
-// Stage 3 — Unified pipeline
+// Unified pipeline
 export { evaluate } from './evaluate';
 export type { PlayerState, EvaluationResult } from './evaluate';

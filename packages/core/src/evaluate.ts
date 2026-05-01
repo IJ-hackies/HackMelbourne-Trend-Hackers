@@ -3,6 +3,7 @@ import type { AnalysisContext, AnalysisResult } from './analysis/types';
 import type { RankEvaluation } from './ranks/evaluator';
 import type { SufferingResult } from './personality/suffering';
 import type { PersonalityResult } from './personality/classifier';
+import type { RoastConfig } from './roasts/ollama';
 import { analyzeEvent } from './analysis/analyze-event';
 import { generateRoasts } from './roasts/generator';
 import { calculateScore } from './scoring/engine';
@@ -28,14 +29,15 @@ export interface EvaluationResult {
   personality: PersonalityResult;
 }
 
-export function evaluate(
+export async function evaluate(
   event: GitEvent,
   playerState: PlayerState,
   context?: AnalysisContext,
-): EvaluationResult {
+  roastConfig?: RoastConfig,
+): Promise<EvaluationResult> {
   const analysis = analyzeEvent(event, context);
 
-  const roasts = generateRoasts(analysis.verdicts);
+  const roasts = await generateRoasts(analysis.verdicts, roastConfig);
 
   const score = calculateScore(analysis.verdicts, playerState.score);
 

@@ -40,14 +40,14 @@ function makePlayerState(overrides: Partial<PlayerStats> = {}): PlayerState {
 }
 
 describe('evaluate', () => {
-  it('returns a complete EvaluationResult for a commit event', () => {
+  it('returns a complete EvaluationResult for a commit event', async () => {
     const event: GitEvent = {
       type: 'commit',
       timestamp: Date.now(),
       metadata: { message: 'fix: resolve login redirect loop' },
     };
 
-    const result = evaluate(event, makePlayerState());
+    const result = await evaluate(event, makePlayerState());
 
     expect(result.analysis).toBeDefined();
     expect(result.analysis.verdicts.length).toBeGreaterThan(0);
@@ -63,29 +63,29 @@ describe('evaluate', () => {
     expect(Array.isArray(result.roasts)).toBe(true);
   });
 
-  it('generates roasts for bad commit messages', () => {
+  it('generates roasts for bad commit messages', async () => {
     const event: GitEvent = {
       type: 'commit',
       timestamp: Date.now(),
       metadata: { message: 'fix' },
     };
 
-    const result = evaluate(event, makePlayerState());
+    const result = await evaluate(event, makePlayerState());
     expect(result.roasts.length).toBeGreaterThan(0);
   });
 
-  it('does not generate roasts for clean commits', () => {
+  it('does not generate roasts for clean commits', async () => {
     const event: GitEvent = {
       type: 'commit',
       timestamp: Date.now(),
       metadata: { message: 'feat: add user authentication with OAuth2 flow' },
     };
 
-    const result = evaluate(event, makePlayerState());
+    const result = await evaluate(event, makePlayerState());
     expect(result.roasts.length).toBe(0);
   });
 
-  it('detects rank promotion when score crosses threshold', () => {
+  it('detects rank promotion when score crosses threshold', async () => {
     const state = makePlayerState();
     state.score = { total: 95, delta: 0, breakdown: {} };
     state.rank = RANK_LADDER[0];
@@ -96,13 +96,13 @@ describe('evaluate', () => {
       metadata: { message: 'feat: add comprehensive user settings page with validation' },
     };
 
-    const result = evaluate(event, state);
+    const result = await evaluate(event, state);
     if (result.score.total >= 100) {
       expect(result.rankEvaluation.promoted).toBe(true);
     }
   });
 
-  it('detects achievements based on stats', () => {
+  it('detects achievements based on stats', async () => {
     const state = makePlayerState({ totalMergeConflicts: 10 });
 
     const event: GitEvent = {
@@ -111,13 +111,13 @@ describe('evaluate', () => {
       metadata: { message: 'refactor: clean up merge conflict artifacts' },
     };
 
-    const result = evaluate(event, state);
+    const result = await evaluate(event, state);
     const survivor = result.achievements.find(a => a.id === 'merge-conflict-survivor');
     expect(survivor).toBeDefined();
     expect(survivor!.unlocked).toBe(true);
   });
 
-  it('calculates suffering from chaotic stats', () => {
+  it('calculates suffering from chaotic stats', async () => {
     const state = makePlayerState({
       totalForcePushes: 5,
       directMainPushes: 3,
@@ -129,18 +129,18 @@ describe('evaluate', () => {
       metadata: { message: 'chore: update dependencies' },
     };
 
-    const result = evaluate(event, state);
+    const result = await evaluate(event, state);
     expect(result.suffering.score).toBeGreaterThan(0);
   });
 
-  it('passes analysis context through to analyzeEvent', () => {
+  it('passes analysis context through to analyzeEvent', async () => {
     const event: GitEvent = {
       type: 'commit',
       timestamp: Date.now(),
       metadata: { message: 'wip' },
     };
 
-    const result = evaluate(event, makePlayerState(), {
+    const result = await evaluate(event, makePlayerState(), {
       branchName: 'main',
       isDefaultBranch: true,
     });
@@ -150,14 +150,14 @@ describe('evaluate', () => {
     expect(branchVerdict!.severity).toBe('critical');
   });
 
-  it('score never goes below 0', () => {
+  it('score never goes below 0', async () => {
     const event: GitEvent = {
       type: 'force-push',
       timestamp: Date.now(),
       metadata: {},
     };
 
-    const result = evaluate(event, makePlayerState());
+    const result = await evaluate(event, makePlayerState());
     expect(result.score.total).toBeGreaterThanOrEqual(0);
   });
 });

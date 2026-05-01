@@ -1,8 +1,10 @@
 import type { Roast } from '../types';
 import type { AnyVerdict } from '../analysis/types';
+import type { RoastConfig } from './ollama';
 import { templates } from './templates';
+import { generateAIRoast } from './ollama';
 
-export function generateRoast(verdict: AnyVerdict): Roast {
+export function generateTemplateRoast(verdict: AnyVerdict): Roast {
   if (verdict.pattern === 'clean') {
     return {
       severity: 'mild',
@@ -25,8 +27,33 @@ export function generateRoast(verdict: AnyVerdict): Roast {
   return selected.generate(verdict);
 }
 
-export function generateRoasts(verdicts: AnyVerdict[]): Roast[] {
-  return verdicts
-    .filter(v => v.pattern !== 'clean')
-    .map(generateRoast);
+export async function generateRoast(
+  verdict: AnyVerdict,
+  config?: RoastConfig,
+): Promise<Roast> {
+  if (verdict.pattern === 'clean') {
+    return {
+      severity: 'mild',
+      message: verdict.message,
+      advice: verdict.advice,
+    };
+  }
+
+  if (config?.ollamaApiKey) {
+    try {
+      return await generateAIRoast(verdict, config);
+    } catch {
+      return generateTemplateRoast(verdict);
+    }
+  }
+
+  return generateTemplateRoast(verdict);
+}
+
+export async function generateRoasts(
+  verdicts: AnyVerdict[],
+  config?: RoastConfig,
+): Promise<Roast[]> {
+  const nonClean = verdicts.filter(v => v.pattern !== 'clean');
+  return Promise.all(nonClean.map(v => generateRoast(v, config)));
 }
