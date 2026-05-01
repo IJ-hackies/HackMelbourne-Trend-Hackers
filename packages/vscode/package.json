@@ -12,27 +12,32 @@
         "commands": [
             {
                 "command": "gitgud.showStatus",
-                "title": "Git Gud: Show Status",
+                "title": "Show Status",
                 "category": "Git Gud"
             },
             {
                 "command": "gitgud.showDashboard",
-                "title": "Git Gud: Show Dashboard",
+                "title": "Show Dashboard",
                 "category": "Git Gud"
             },
             {
                 "command": "gitgud.resetStats",
-                "title": "Git Gud: Reset Stats",
+                "title": "Reset Stats",
                 "category": "Git Gud"
             },
             {
                 "command": "gitgud.toggleSound",
-                "title": "Git Gud: Toggle Sound",
+                "title": "Toggle Sound",
                 "category": "Git Gud"
             },
             {
                 "command": "gitgud.showProfile",
-                "title": "Git Gud: Show Profile",
+                "title": "Show Profile",
+                "category": "Git Gud"
+            },
+            {
+                "command": "gitgud.testRoast",
+                "title": "Test Roast (Demo)",
                 "category": "Git Gud"
             }
         ],
@@ -83,13 +88,16 @@
         }
     },
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "vscode:prepublish": "npm run build",
+        "package": "npx @vscode/vsce package --no-dependencies"
     },
     "dependencies": {
         "@git-gud/core": "*"
     },
     "devDependencies": {
-        "typescript": "^6.0.0",
-        "@types/vscode": "^1.85.0"
+        "typescript": "^5.0.0",
+        "@types/vscode": "^1.85.0",
+        "@types/node": "^20.0.0"
     }
 }

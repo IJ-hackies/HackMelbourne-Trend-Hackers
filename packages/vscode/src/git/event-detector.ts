@@ -1,8 +1,7 @@
 import { GitEventType } from '@git-gud/core';
 import type { GitEvent } from '@git-gud/core';
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as cp from 'child_process';
 
 const outputChannel = vscode.window.createOutputChannel('Git Gud');
 
@@ -14,95 +13,49 @@ export function detectGitEvents(
     onEvent: (event: GitEvent) => void,
     disposables: vscode.Disposable[]
 ): void {
-    // We watch the .git directory of every workspace folder
     const workspaceFolders = vscode.workspace.workspaceFolders || [];
 
     for (const folder of workspaceFolders) {
-        const gitDir = path.join(folder.uri.fsPath, '.git');
-        if (!fs.existsSync(gitDir)) {
-            continue; // Not a git repo
-        }
-
-        // Watch COMMIT_EDITMSG for commit messages being written
-        const commitMsgPath = path.join(gitDir, 'COMMIT_EDITMSG');
-        const logHeadPath = path.join(gitDir, 'logs', 'HEAD');
-        const mergeHeadPath = path.join(gitDir, 'MERGE_HEAD');
-        const rebaseDir = path.join(gitDir, 'rebase-merge');
-
-        // Watch logs/HEAD for any git operation (commit, push, merge, etc.)
-        const logWatcher = vscode.workspace.createFileSystemWatcher(
+        // Check if it's a git repo by looking for .git folder
+        const gitWatcher = vscode.workspace.createFileSystemWatcher(
             new vscode.RelativePattern(folder, '.git/logs/HEAD')
         );
 
-        let lastCommitMessage = '';
         let lastCommitHash = '';
 
-        const handleLogChange = debounce(async () => {
+        const handleGitActivity = debounce(async () => {
             try {
-                // Try to read the commit message being prepared
-                if (fs.existsSync(commitMsgPath)) {
-                    const msg = fs.readFileSync(commitMsgPath, 'utf-8').trim();
-                    if (msg && !msg.startsWith('#')) {
-                        lastCommitMessage = msg.split('\n')[0].trim(); // First line only
-                    }
+                const info = await getLastCommitInfo(folder.uri.fsPath);
+                if (!info || !info.commitHash || info.commitHash === lastCommitHash) {
+                    return;
                 }
+                lastCommitHash = info.commitHash;
 
-                // Get current branch
-                const headRef = fs.readFileSync(path.join(gitDir, 'HEAD'), 'utf-8').trim();
-                const branch = headRef.replace('ref: refs/heads/', '').trim();
-                const isDefaultBranch = ['main', 'master', 'develop'].includes(branch);
+                const isDefaultBranch = ['main', 'master', 'develop'].includes(info.branch);
 
-                // Check for rebase
-                if (fs.existsSync(rebaseDir)) {
-                    onEvent({
-                        type: GitEventType.Rebase,
-                        timestamp: Date.now(),
-                        metadata: { branch, detectedVia: 'file-watcher' },
-                    });
-                    outputChannel.appendLine(`[Git Gud] Rebase detected on ${branch}`);
-                }
-
-                // Check for merge conflict
-                if (fs.existsSync(mergeHeadPath)) {
-                    onEvent({
-                        type: GitEventType.MergeConflict,
-                        timestamp: Date.now(),
-                        metadata: { branch, detectedVia: 'file-watcher' },
-                    });
-                    outputChannel.appendLine(`[Git Gud] Merge conflict detected on ${branch}`);
-                }
-
-                // Try to get last commit info
-                const { commitHash, message, filesChanged, insertions, deletions } = await getLastCommitInfo(folder.uri.fsPath);
-
-                if (commitHash && commitHash !== lastCommitHash && message) {
-                    lastCommitHash = commitHash;
-
-                    onEvent({
-                        type: GitEventType.Commit,
-                        timestamp: Date.now(),
-                        metadata: {
-                            message: message || lastCommitMessage,
-                            branch,
-                            isDefaultBranch,
-                            filesChanged: filesChanged || 1,
-                            insertions: insertions || 0,
-                            deletions: deletions || 0,
-                        },
-                    });
-                    outputChannel.appendLine(`[Git Gud] Commit detected: "${message || lastCommitMessage}" on ${branch}`);
-                }
-
-            } catch (err) {
-                outputChannel.appendLine(`[Git Gud] Error: ${err}`);
+                onEvent({
+                    type: GitEventType.Commit,
+                    timestamp: Date.now(),
+                    metadata: {
+                        message: info.message,
+                        branch: info.branch,
+                        isDefaultBranch,
+                        filesChanged: info.filesChanged || 1,
+                        insertions: info.insertions || 0,
+                        deletions: info.deletions || 0,
+                    },
+                });
+                outputChannel.appendLine(`[Git Gud] Commit detected: "${info.message}" on ${info.branch}`);
+            } catch (err: any) {
+                outputChannel.appendLine(`[Git Gud] Error: ${err?.message || err}`);
             }
-        }, 500);
+        }, 800);
 
-        logWatcher.onDidChange(handleLogChange);
-        logWatcher.onDidCreate(handleLogChange);
-        disposables.push(logWatcher);
+        gitWatcher.onDidChange(handleGitActivity);
+        gitWatcher.onDidCreate(handleGitActivity);
+        disposables.push(gitWatcher);
 
-        // Also watch MERGE_HEAD for conflicts appearing/disappearing
+        // Watch MERGE_HEAD for conflicts
         const mergeWatcher = vscode.workspace.createFileSystemWatcher(
             new vscode.RelativePattern(folder, '.git/MERGE_HEAD')
         );
@@ -110,9 +63,9 @@ export function detectGitEvents(
             onEvent({
                 type: GitEventType.MergeConflict,
                 timestamp: Date.now(),
-                metadata: { branch: 'unknown', detectedVia: 'MERGE_HEAD watcher' },
+                metadata: { detectedVia: 'MERGE_HEAD' },
             });
-            outputChannel.appendLine('[Git Gud] MERGE_HEAD created — merge conflict in progress');
+            outputChannel.appendLine('[Git Gud] Merge conflict detected');
         });
         disposables.push(mergeWatcher);
 
@@ -124,7 +77,7 @@ export function detectGitEvents(
             onEvent({
                 type: GitEventType.BranchSwitch,
                 timestamp: Date.now(),
-                metadata: { detectedVia: 'HEAD watcher' },
+                metadata: { detectedVia: 'HEAD change' },
             });
             outputChannel.appendLine('[Git Gud] Branch switch detected');
         });
@@ -132,33 +85,50 @@ export function detectGitEvents(
     }
 }
 
-async function getLastCommitInfo(repoPath: string): Promise<{ commitHash: string; message: string; filesChanged: number; insertions: number; deletions: number }> {
-    return new Promise((resolve) => {
-        const cp = require('child_process');
-        // Get last commit hash and message
-        cp.exec('git log -1 --pretty=format:"%H|%s"', { cwd: repoPath }, (err: any, stdout: string) => {
-            if (err || !stdout) {
-                resolve({ commitHash: '', message: '', filesChanged: 0, insertions: 0, deletions: 0 });
-                return;
-            }
-            const parts = stdout.trim().split('|');
-            const commitHash = parts[0];
-            const message = parts.slice(1).join('|');
-
-            // Get stats for that commit
-            cp.exec('git log -1 --shortstat --pretty=format:""', { cwd: repoPath }, (err2: any, statsOut: string) => {
-                let filesChanged = 0, insertions = 0, deletions = 0;
-                if (!err2 && statsOut) {
-                    const fcMatch = statsOut.match(/(\d+) file/);
-                    const insMatch = statsOut.match(/(\d+) insertion/);
-                    const delMatch = statsOut.match(/(\d+) deletion/);
-                    if (fcMatch) filesChanged = parseInt(fcMatch[1]);
-                    if (insMatch) insertions = parseInt(insMatch[1]);
-                    if (delMatch) deletions = parseInt(delMatch[1]);
+function getLastCommitInfo(repoPath: string): Promise<{
+    commitHash: string;
+    message: string;
+    branch: string;
+    filesChanged: number;
+    insertions: number;
+    deletions: number;
+}> {
+    return new Promise((resolve, reject) => {
+        // Get commit hash + message + stats all in one command
+        cp.exec(
+            'git log -1 --pretty=format:"%H|%s" --shortstat',
+            { cwd: repoPath, encoding: 'utf-8' },
+            (err: cp.ExecException | null, stdout: string) => {
+                if (err || !stdout) {
+                    reject(err);
+                    return;
                 }
-                resolve({ commitHash, message, filesChanged, insertions, deletions });
-            });
-        });
+                const lines = stdout.trim().split('\n');
+                const parts = lines[0].split('|');
+                const commitHash = parts[0];
+                const message = parts.slice(1).join('|');
+
+                // Parse stats from the second line (if present)
+                const statsLine = lines[1] || '';
+                let filesChanged = 0, insertions = 0, deletions = 0;
+                const fcMatch = statsLine.match(/(\d+) file/);
+                const insMatch = statsLine.match(/(\d+) insertion/);
+                const delMatch = statsLine.match(/(\d+) deletion/);
+                if (fcMatch) filesChanged = parseInt(fcMatch[1]);
+                if (insMatch) insertions = parseInt(insMatch[1]);
+                if (delMatch) deletions = parseInt(delMatch[1]);
+
+                // Get current branch
+                cp.exec(
+                    'git branch --show-current',
+                    { cwd: repoPath, encoding: 'utf-8' },
+                    (err2: cp.ExecException | null, branchOut: string) => {
+                        const branch = (!err2 && branchOut) ? branchOut.trim() : 'unknown';
+                        resolve({ commitHash, message, branch, filesChanged, insertions, deletions });
+                    }
+                );
+            }
+        );
     });
 }
 

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { evaluate } from '@git-gud/core';
+import { evaluate, GitEventType } from '@git-gud/core';
 import type { GitEvent, PlayerState } from '@git-gud/core';
 import { loadState, saveState, resetState } from './storage/state-manager';
 import {
@@ -57,16 +57,39 @@ export function activate(context: vscode.ExtensionContext) {
             config.update('soundEnabled', !current, true);
             vscode.window.showInformationMessage(`Git Gud sounds ${!current ? 'enabled' : 'disabled'}.`);
         }),
-        vscode.commands.registerCommand('gitgud.showProfile', () => {
-            const lines = [
-                `🏅 Rank: ${playerState.rank.name}`,
-                `⭐ Score: ${playerState.score.total}`,
-                `🎭 Personality: ${playerState.personality.type}`,
-                `😈 Teammate Suffering: ${playerState.suffering.score}/100 (${playerState.suffering.title})`,
-                `📊 Commits: ${playerState.stats.totalCommits}`,
-                `🔥 Streak: ${playerState.stats.currentStreak} (Best: ${playerState.stats.bestStreak})`,
-            ];
-            vscode.window.showInformationMessage(lines.join(' | '));
+        vscode.commands.registerCommand('gitgud.testRoast', () => {
+            const testEvent: GitEvent = {
+                type: GitEventType.Commit,
+                timestamp: Date.now(),
+                metadata: {
+                    message: 'fix',
+                    branch: 'main',
+                    isDefaultBranch: true,
+                    filesChanged: 1,
+                    insertions: 2,
+                    deletions: 0,
+                },
+            };
+            const timestamps = playerState.stats.commitTimestamps;
+            const result = evaluate(testEvent, playerState, { commitTimestamps: timestamps });
+
+            playerState = {
+                ...playerState,
+                score: result.score,
+                rank: result.rank.rank,
+                achievements: result.achievements,
+                stats: result.stats,
+                personality: result.personality,
+                suffering: result.suffering,
+            };
+            saveState(context, playerState);
+            sidebarProvider.update(playerState);
+
+            showRoastNotification(result.roast, result.analysis);
+            showRankChangeNotification(result.rank);
+            showAchievementNotification(result.achievements);
+
+            outputChannel.appendLine(`[Test] Demo roast fired!`);
         }),
     ];
     context.subscriptions.push(...commands);
