@@ -15,7 +15,7 @@ Take a single stage from a project's top-level plan and produce a detailed break
 
 Plans live in different places in different repos. Look in this order, and stop at the first hit:
 
-1. `Context/PLAN.md` with breakdowns in `Context/Plans/STAGE<N>.md` (Geode-style — capitalized)
+1. `Context/PLAN.md` with breakdowns in `Context/Plans/STAGE<N>.md` (capitalized)
 2. `context/plan.md` with breakdowns in `context/plans/stage<N>.md`
 3. `PLAN.md` at repo root with breakdowns in `plans/STAGE<N>.md` or `plans/stage<N>.md`
 4. `plan.md` at repo root with breakdowns in `plans/stage<N>.md`
