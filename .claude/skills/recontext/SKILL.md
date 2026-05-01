@@ -2,11 +2,11 @@
 
 name: recontext
 
-description: "Reads core context files (ABOUT.md, PLAN.md) and optionally a specific stage plan to build understanding of the Geode project. Usage: /recontext [stage_number] — e.g. /recontext 3 to include Stage 3's plan."
+description: "Reads core context files (ABOUT.md, PLAN.md) and optionally a specific stage plan to build understanding of the project. Usage: /recontext [stage_number] — e.g. /recontext 3 to include Stage 3's plan."
 
 ---
 
-You are loading context for the Geode project. The user may pass an optional argument specifying a stage number (e.g. `3`, `5`). This is available as `$ARGUMENTS`.
+You are loading context for this project. The user may pass an optional argument specifying a stage number (e.g. `3`, `5`). This is available as `$ARGUMENTS`.
 
 Follow these steps exactly:
 
@@ -20,8 +20,8 @@ Follow these steps exactly:
 
 3. **Synthesize and report** the following sections based on what you read:
 
-   ### What is Geode?
-   One-paragraph summary of the project's purpose, core metaphor, and what problem it solves.
+   ### What is this project?
+   One-paragraph summary of the project's purpose, core concepts, and what problem it solves.
 
    ### System Flow
    Describe how the system works end-to-end. Trace how a request or action moves through the system — from entry point through each layer/component to the final result.

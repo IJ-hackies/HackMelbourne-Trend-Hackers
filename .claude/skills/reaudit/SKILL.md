@@ -31,39 +31,31 @@ This gives you the mental model needed to write targeted audit prompts for the p
 
 ### Phase 2 — Deploy parallel audit agents
 
-Spawn **5-8 agents** (using the Agent tool), each covering a distinct subsystem. The exact split depends on the project's module structure, but a good default partitioning is:
-
-- **Agent 1: Launch & Subprocess layer** — everything in `src/launch/` and process spawning. Focus on: exit code handling, stream management, resource cleanup, argument construction, env propagation.
-- **Agent 2: CLI tool surfaces** — everything in `src/cli/` (the tool CLIs that agents call via Bash). Focus on: import completeness, file I/O safety (atomic writes, TOCTOU), ID generation security, error handling in `loadHierarchy`/JSON parsing.
-- **Agent 3: Prompt & SOP layer** — everything in `src/prompt/`. Focus on: template slot injection (`{{cli_prefix}}`, `{{shard_id}}`), SOP accuracy vs. actual tool surfaces, stale references to removed fields or commands, tool card generation matching real CLI commands.
-- **Agent 4: Session, safety & scheduling** — `src/session/`, `src/safety/`, `src/schedule/`. Focus on: SQLite transaction safety, circuit breaker atomicity, session state machine correctness, pulse scheduling edge cases.
-- **Agent 5: Knowledge store & data layer** — `src/knowledge/`, `src/mcp/`. Focus on: vector math correctness, embedding dimension mismatches, FTS5 query safety, scope resolution, MCP config merging edge cases.
-- **Agent 6: Shard orchestration & messaging** — `src/shard/`, `src/echo/`. Focus on: cross-shard messaging safety, approval protocol correctness, daemon error handling, notification ID generation, hierarchy loading.
-- **Agent 7: Schema & type consistency** — `src/schemas/`. Focus on: Zod schemas matching actual runtime data shapes, missing optional fields, enum completeness, schema used in parse vs. safeParse consistency.
+Spawn **5-8 agents** (using the Agent tool), each covering a distinct subsystem. The exact split depends on the project's module structure — partition by package, module, or feature boundary. Each agent should cover a cohesive set of files that makes sense to audit together.
 
 Each agent prompt should include:
 - The specific directories/files to audit
-- The project's core architecture (Geode → Core → Shard → Echo hierarchy)
+- The project's core architecture (summarized from ABOUT.md)
 - What categories of issues to look for (from the list above)
 - Instructions to report findings in a structured format
 
 **Agent prompt template** (adapt per subsystem):
 
 ```
-You are auditing the [SUBSYSTEM] layer of a hierarchical multi-agent system called Geode.
+You are auditing the [SUBSYSTEM] layer of this project.
 
-Architecture: Geode is a three-level agent hierarchy (Core → Shard → Echo) where each agent is a Claude Code subprocess. The system uses Bun (TypeScript), Zod schemas, SQLite (bun:sqlite), and spawns agents via `Bun.spawn()`.
+Architecture: [INSERT BRIEF ARCHITECTURE SUMMARY FROM ABOUT.md]
 
 Your audit scope: [LIST OF FILES/DIRECTORIES]
 
 Read every file in scope. For each file, check for:
-1. Missing or incorrect imports (especially Node.js built-ins like appendFileSync)
+1. Missing or incorrect imports
 2. Unsafe file I/O (TOCTOU races: existsSync followed by read/write/unlink)
 3. Unsafe ID generation (Math.random() instead of crypto.randomBytes)
 4. Unhandled JSON.parse without try-catch on user/disk data
 5. Fire-and-forget async with no .catch() (swallowed rejections)
 6. Stream/reader resource leaks (ReadableStream readers not cancelled in finally blocks)
-7. Schema drift (Zod schema vs actual runtime usage)
+7. Schema drift (type definitions vs actual runtime usage)
 8. Dead code or unreachable branches
 9. Inconsistencies with parallel implementations in other files
 10. Any other correctness, security, or reliability issue you spot
