@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: build - packages/vscode",
+      "type": "npm",
+      "script": "build",
+      "path": "packages/vscode",
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    }
+  ]
+}
