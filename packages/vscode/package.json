@@ -11,10 +11,48 @@
   "contributes": {
     "commands": [
       {
-        "command": "gitGud.showStatus",
+        "command": "gitgud.showStatus",
         "title": "Git Gud: Show Status"
+      },
+      {
+        "command": "gitgud.resetStats",
+        "title": "Git Gud: Reset Stats"
+      },
+      {
+        "command": "gitgud.showProfile",
+        "title": "Git Gud: Show Profile"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Git Gud",
+      "properties": {
+        "gitgud.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable Git Gud event monitoring and roasts."
+        },
+        "gitgud.notificationsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notification popups when git events are detected."
+        },
+        "gitgud.ollamaApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Ollama cloud AI roast generation. Leave empty to use template roasts."
+        },
+        "gitgud.ollamaModel": {
+          "type": "string",
+          "default": "",
+          "description": "Ollama model to use for AI roasts (default: kimi-k2.6:cloud)."
+        },
+        "gitgud.ollamaBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Base URL for the Ollama API (default: https://ollama.com/v1)."
+        }
+      }
+    }
   },
   "scripts": {
     "build": "tsc"

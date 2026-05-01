@@ -14,7 +14,7 @@ Sound effects come last because they're optional and depend on the notification 
 
 ---
 
-## Stage 4.1 — Git Event Detection
+## Stage 4.1 — Git Event Detection ✅ COMPLETE
 
 **Goal:** Detect git activity in the workspace and emit structured `GitEvent` objects that the core package can consume.
 
@@ -39,7 +39,7 @@ Sound effects come last because they're optional and depend on the notification 
 
 ---
 
-## Stage 4.2 — Notification Popups
+## Stage 4.2 — Notification Popups ✅ COMPLETE
 
 **Goal:** Show roast + advice as VS Code notifications when git events are detected. This is the minimum viable feedback loop.
 
@@ -58,7 +58,7 @@ Sound effects come last because they're optional and depend on the notification 
 
 ---
 
-## Stage 4.3 — Local Persistence
+## Stage 4.3 — Local Persistence ✅ COMPLETE
 
 **Goal:** Store user stats so score, rank, achievements, and history survive extension restarts.
 
@@ -100,26 +100,27 @@ Sound effects come last because they're optional and depend on the notification 
 
 ---
 
-## Stage 4.5 — Commands & Configuration
+## Stage 4.5 — Commands & Configuration (partially complete)
 
-**Goal:** Register user-facing commands and settings so developers can control the extension.
+**Goal:** Register remaining user-facing commands and settings not already covered by 4.2/4.3.
 
-**Deliverables:**
-- `packages/vscode/package.json` — register commands and settings in `contributes`:
-  - Commands:
-    - `gitgud.showDashboard` — focus the sidebar
-    - `gitgud.resetStats` — clear all stats (with confirmation prompt)
-    - `gitgud.toggleSound` — enable/disable sound effects
-    - `gitgud.showProfile` — show a summary notification with current rank and stats
-  - Configuration (`contributes.configuration`):
-    - `gitgud.enabled` — master on/off toggle (default: true)
-    - `gitgud.soundEnabled` — sound effects toggle (default: true)
-    - `gitgud.notificationsEnabled` — notification popup toggle (default: true)
-    - `gitgud.roastIntensity` — `"mild" | "medium" | "savage"` (default: `"medium"`)
-- `packages/vscode/src/config.ts` — read settings from `vscode.workspace.getConfiguration('gitgud')`, react to setting changes via `onDidChangeConfiguration`
-- Update notification and event pipeline to respect `enabled`, `notificationsEnabled`, and `roastIntensity` settings
+**Already implemented in 4.2/4.3:**
+- ✅ `gitgud.showStatus` — show rank/score/commits summary
+- ✅ `gitgud.resetStats` — clear all stats with confirmation prompt
+- ✅ `gitgud.showProfile` — show detailed profile in output channel
+- ✅ `gitgud.enabled` — master on/off toggle (default: true)
+- ✅ `gitgud.notificationsEnabled` — notification popup toggle (default: true)
+- ✅ `gitgud.ollamaApiKey`, `gitgud.ollamaModel`, `gitgud.ollamaBaseUrl` — AI roast configuration
+- ✅ Pipeline respects `enabled` and `notificationsEnabled` settings
 
-**Exit criteria:** All commands appear in the command palette. Disabling `gitgud.enabled` stops event detection. Changing `roastIntensity` changes the tone of subsequent roasts.
+**Remaining deliverables:**
+- `gitgud.showDashboard` — focus the sidebar (depends on 4.4)
+- `gitgud.toggleSound` — enable/disable sound effects (depends on 4.6)
+- `gitgud.soundEnabled` — sound effects toggle (default: true)
+- `gitgud.roastIntensity` — `"mild" | "medium" | "savage"` (default: `"medium"`)
+- `packages/vscode/src/config.ts` — centralized config reader with `onDidChangeConfiguration` listener (currently config is read inline in extension.ts)
+
+**Exit criteria:** All commands appear in the command palette. Changing `roastIntensity` changes the tone of subsequent roasts.
 
 ---
 

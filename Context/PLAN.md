@@ -28,7 +28,7 @@ Build the analysis functions in `packages/core/` that evaluate raw git data and 
 Build the personality layer and progression systems on top of the analysis engine.
 
 **Deliverables:**
-- ✅ Roast template system — 80+ procedural roast templates per event type, with genuine advice attached (retained as fallback)
+- ✅ Roast template system — 70+ procedural roast templates per event type, with genuine advice attached (retained as fallback)
 - ✅ AI roast generation — Ollama cloud API integration (`kimi-k2.6:cloud`) with toxic esports coach persona prompt, template fallback on API failure
 - ✅ Brainrot slang library — 40+ gen-z/internet slang entries with meanings and git-context examples, injected into AI prompt
 - ✅ `RoastConfig` type — API key, model, base URL configuration for AI roast generation
@@ -44,12 +44,14 @@ Build the personality layer and progression systems on top of the analysis engin
 Wire core into a working VS Code extension that reacts to real git activity.
 
 **Deliverables:**
-- Git event detection via VS Code Git API (commits, branch switches, push indicators)
-- File system watchers on `.git/` for events the API doesn't surface (force push, rebase, merge conflicts via `MERGE_HEAD`)
-- Notification popups — roast + advice on each detected event
+- ✅ Git event detection via VS Code Git API (commits, branch switches, push indicators)
+- ✅ File system watchers on `.git/` for events the API doesn't surface (rebase, merge conflicts via `MERGE_HEAD`)
+- ✅ Notification popups — roast + advice on each detected event, severity-based routing (info/warning/error)
+- ✅ Local persistence — user stats stored in VS Code globalState with schema versioning and migration support
+- ✅ Commands (`gitgud.showStatus`, `gitgud.resetStats`, `gitgud.showProfile`) and settings (`enabled`, `notificationsEnabled`, Ollama API config)
 - Sidebar webview dashboard — current rank, score, recent offenses, active streaks, achievements
-- Local persistence — store user stats in VS Code globalState or workspace storage
 - Sound effects — esports-style audio cues on events (optional toggle)
+- Remaining commands (`gitgud.showDashboard`, `gitgud.toggleSound`) and settings (`soundEnabled`, `roastIntensity`)
 
 ## Stage 5 — Website MVP
 
