@@ -6,7 +6,7 @@ description: Audits the project's actual state against the Context/ folder (ABOU
 
 ---
 
-You are performing a direction audit of the Geode project. Your job is to compare the project's **actual current state** against what the **Context/ files say it should be**, and surface any mismatches.
+You are performing a direction audit of this project. Your job is to compare the project's **actual current state** against what the **Context/ files say it should be**, and surface any mismatches.
 
 ## Step 1 — Load the source of truth
 
@@ -18,11 +18,11 @@ Read the Context/ files in this order:
 Skip `Context/Diagrams/` — those are visual references only.
 
 Mentally index:
-- Every **component** described (Core, Shard, Echo, Knowledge Store, etc.)
-- Every **data structure** and file path described (AGENT.md, hierarchy.json, schemas, etc.)
-- Every **feature** described (task types, circuit breaker, coalitions, session tracking, etc.)
-- Every **script/module** described (launch_echo.py, memory_manager.py, etc.)
-- The **directory structure** described for the Geode environment
+- Every **component** described (packages, modules, services, etc.)
+- Every **data structure** and file path described (types, schemas, configs, etc.)
+- Every **feature** described (user-facing features, internal systems, etc.)
+- Every **script/module** described (entry points, utilities, build scripts, etc.)
+- The **directory structure** described for the project
 - The **stage ordering and dependencies** in PLAN.md
 
 ## Step 2 — Scan the actual project
