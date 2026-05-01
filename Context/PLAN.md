@@ -23,7 +23,7 @@ Build the analysis functions in `packages/core/` that evaluate raw git data and 
 - ✅ Session duration detector (coding for unreasonable hours)
 - ✅ Unified `analyzeEvent()` function that takes a git event and returns analysis results
 
-## Stage 3 — Roast & Scoring System (core) 🔧 IN PROGRESS
+## Stage 3 — Roast & Scoring System (core) ✅ COMPLETE
 
 Build the personality layer and progression systems on top of the analysis engine.
 
@@ -31,9 +31,10 @@ Build the personality layer and progression systems on top of the analysis engin
 - ✅ Roast template system — procedural roast generation per event type, with genuine advice attached
 - ✅ Scoring engine — calculates git skill rating from event history, tracks score changes per event
 - ✅ Rank system — rank thresholds, promotion/demotion logic, rank definitions
-- ❌ Achievement system — achievement definitions, unlock conditions, progress tracking
-- ❌ Teammate suffering calculator — comedic stat derived from how chaotic the user's git history is
-- ❌ Developer personality classifier (Commit Goblin, Chaos Mage, README Avoider, etc.)
+- ✅ Achievement system — 10 achievements with unlock conditions and progress tracking
+- ✅ Teammate suffering calculator — 0–100 chaos score with escalating titles
+- ✅ Developer personality classifier — 7 archetypes (Commit Goblin, Chaos Mage, README Avoider, Monolith Merchant, Branch Hoarder, The Perfectionist, Night Crawler)
+- ✅ Unified `evaluate()` pipeline — single entry point returning complete EvaluationResult
 
 ## Stage 4 — VS Code Extension MVP
 

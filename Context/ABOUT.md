@@ -46,4 +46,4 @@ Intentionally overdramatic. Mimics competitive esports, ranked gaming, dramatic 
 
 ## Current state
 
-Monorepo fully set up (Stage 1 complete). Git analysis engine built with all analyzers and tests (Stage 2 complete). Roast templates, scoring engine, and rank system implemented with tests (Stage 3 partially complete — achievements, suffering calculator, and personality classifier still needed). VS Code extension scaffold activates and imports core. Next.js 16 web package scaffolded. Stages 4–6 not yet started.
+Monorepo fully set up (Stage 1 complete). Git analysis engine built with all analyzers and tests (Stage 2 complete). Full roast/scoring/personality layer complete (Stage 3 complete) — roast templates, scoring engine, rank system, achievement system (10 achievements), teammate suffering calculator, developer personality classifier (7 archetypes), and unified `evaluate()` pipeline all implemented with tests. VS Code extension scaffold activates and imports core. Next.js 16 web package scaffolded. Stages 4–6 not yet started.

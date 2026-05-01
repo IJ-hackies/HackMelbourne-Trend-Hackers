@@ -39,3 +39,30 @@ export interface Roast {
   severity: 'mild' | 'medium' | 'savage';
   advice: string;
 }
+
+export interface PlayerStats {
+  totalCommits: number;
+  totalForcePushes: number;
+  totalMergeConflicts: number;
+  totalBranchSwitches: number;
+  totalPushes: number;
+  totalRebases: number;
+  totalMerges: number;
+  directMainPushes: number;
+  hardResets: number;
+  deletedRemoteBranches: number;
+  cleanCommitStreak: number;
+  longestCleanStreak: number;
+  totalFilesChanged: number;
+  totalInsertions: number;
+  totalDeletions: number;
+  uniqueBranches: Set<string>;
+  readmeEdits: number;
+  sessionsOver4Hours: number;
+  lateNightCommits: number;
+  weekendCommits: number;
+  panicBursts: number;
+  commitsInCurrentSession: number;
+  averageCommitSize: number;
+  score: number;
+}
