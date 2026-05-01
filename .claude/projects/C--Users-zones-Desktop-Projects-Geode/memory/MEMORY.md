@@ -1,0 +1,1 @@
+- [Google MCP integration](project_google_mcp.md) — First MCP server target is Google (calendar, etc.) for Stage 2 validation
