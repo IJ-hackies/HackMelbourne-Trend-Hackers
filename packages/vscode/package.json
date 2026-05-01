@@ -1,0 +1,95 @@
+{
+    "name": "git-gud-vscode",
+    "version": "0.1.0",
+    "main": "dist/extension.js",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "gitgud.showStatus",
+                "title": "Git Gud: Show Status",
+                "category": "Git Gud"
+            },
+            {
+                "command": "gitgud.showDashboard",
+                "title": "Git Gud: Show Dashboard",
+                "category": "Git Gud"
+            },
+            {
+                "command": "gitgud.resetStats",
+                "title": "Git Gud: Reset Stats",
+                "category": "Git Gud"
+            },
+            {
+                "command": "gitgud.toggleSound",
+                "title": "Git Gud: Toggle Sound",
+                "category": "Git Gud"
+            },
+            {
+                "command": "gitgud.showProfile",
+                "title": "Git Gud: Show Profile",
+                "category": "Git Gud"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "gitgud-sidebar",
+                    "title": "Git Gud",
+                    "icon": "$(flame)"
+                }
+            ]
+        },
+        "views": {
+            "gitgud-sidebar": [
+                {
+                    "type": "webview",
+                    "id": "gitgud-dashboard",
+                    "name": "Dashboard",
+                    "when": "gitgud.enabled"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Git Gud",
+            "properties": {
+                "gitgud.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable Git Gud extension"
+                },
+                "gitgud.soundEnabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable sound effects"
+                },
+                "gitgud.notificationsEnabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show notification popups"
+                },
+                "gitgud.roastIntensity": {
+                    "type": "string",
+                    "enum": ["mild", "medium", "savage"],
+                    "default": "medium",
+                    "description": "Roast severity level"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@git-gud/core": "*"
+    },
+    "devDependencies": {
+        "typescript": "^6.0.0",
+        "@types/vscode": "^1.85.0"
+    }
+}

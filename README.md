@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Git Gud
 
-## Getting Started
+**Competitive Git for dangerously overconfident developers.**
 
-First, run the development server:
+Git Gud transforms everyday Git usage into a competitive esports-style experience. It watches Git activity and reacts like a toxic competitive gaming coach — roasting developers for bad habits while genuinely teaching proper workflow practices.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Architecture
+
+Monorepo with three packages:
+
+```
+packages/
+  core/       # Shared logic — git analysis, scoring engine, roast generation, ranks, achievements
+  vscode/     # VS Code extension — the primary product. Observes git events, calls core, renders UI
+  web/        # Next.js website — social layer. Developer profiles, leaderboards, Git Wrapped, roast cards
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Data flow:** The extension is the sensor (detects git events via VS Code Git API and `.git/` file watchers), core is the brain (analyzes events, generates scores/roasts/achievements), and the website is the scoreboard (displays accumulated stats).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Language:** TypeScript
+- **Monorepo:** npm workspaces
+- **VS Code Extension:** VS Code Extension API, VS Code Git API
+- **Website:** Next.js 16, React 19, Tailwind CSS 4
+- **Git interaction:** Read-only observation via VS Code Git API + file system watchers on `.git/`. No git wrapping or aliasing.
 
-## Learn More
+## Commands
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Install dependencies
+npm install
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Start the Next.js dev server
+npm run dev
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Build all packages
+npm run build
 
-## Deploy on Vercel
+# Lint the web package
+npm run lint --workspace=packages/web
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Key Systems
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Git Analysis:** Evaluates commit messages, branch names, commit size, risky actions (force push, direct main push, rebases), coding session duration
+- **Roast Generation:** Procedural templates that produce jokes, insults, and fake coaching commentary. Every roast includes genuine advice.
+- **Scoring Engine:** Calculates git skill rating, toxicity score, teammate emotional damage, developer personality type
+- **Rank System:** Bronze Committer → Silver Rebaser → Gold Merger → Platinum Merge Survivor → Diamond Git Wizard
+- **Achievements:** Unlockable badges (Merge Conflict Survivor, Force Push Felon, Branch Necromancer, etc.)
+- **Git Wrapped:** Annual summary feature with viral-friendly stats
+- **Shareable Roast Cards:** Auto-generated cards for social media
+
+## Tone & Branding
+
+Intentionally overdramatic. Mimics competitive esports, ranked gaming, dramatic anime battles, and toxic multiplayer voice chat — applied to ordinary Git workflow.
+
+## Development
+
+The project is structured as a hackathon build. Stage plans live in `Context/PLAN.md` and `Context/Plans/STAGE1.md` through `STAGE4.md`. The context system includes `.claude/skills/` with commands like `/recontext` and `/replan`.
