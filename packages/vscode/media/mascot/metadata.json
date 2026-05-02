@@ -1,0 +1,134 @@
+{
+  "character": {
+    "id": "86b7f8de-4580-41a9-99b2-4982be8504e7",
+    "name": "gremlin/goblin wearing an oversized gaming headset and oversied esport jersy, and sparkly pink sunglasses",
+    "prompt": "gremlin/goblin wearing an oversized gaming headset and oversied esport jersy, and sparkly pink sunglasses",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 4,
+    "view": "low top-down",
+    "created_at": "2026-05-01T15:19:07.082389+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "west": "rotations/west.png",
+      "east": "rotations/east.png",
+      "north": "rotations/north.png"
+    },
+    "animations": {
+      "Breathing_Idle-41a25bef": {
+        "south": [
+          "animations/Breathing_Idle-41a25bef/south/frame_000.png",
+          "animations/Breathing_Idle-41a25bef/south/frame_001.png",
+          "animations/Breathing_Idle-41a25bef/south/frame_002.png",
+          "animations/Breathing_Idle-41a25bef/south/frame_003.png"
+        ]
+      },
+      "Walking-a5b54fbd": {
+        "south": [
+          "animations/Walking-a5b54fbd/south/frame_000.png",
+          "animations/Walking-a5b54fbd/south/frame_001.png",
+          "animations/Walking-a5b54fbd/south/frame_002.png",
+          "animations/Walking-a5b54fbd/south/frame_003.png",
+          "animations/Walking-a5b54fbd/south/frame_004.png",
+          "animations/Walking-a5b54fbd/south/frame_005.png",
+          "animations/Walking-a5b54fbd/south/frame_006.png",
+          "animations/Walking-a5b54fbd/south/frame_007.png"
+        ],
+        "east": [
+          "animations/Walking-a5b54fbd/east/frame_000.png",
+          "animations/Walking-a5b54fbd/east/frame_001.png",
+          "animations/Walking-a5b54fbd/east/frame_002.png",
+          "animations/Walking-a5b54fbd/east/frame_003.png",
+          "animations/Walking-a5b54fbd/east/frame_004.png",
+          "animations/Walking-a5b54fbd/east/frame_005.png",
+          "animations/Walking-a5b54fbd/east/frame_006.png",
+          "animations/Walking-a5b54fbd/east/frame_007.png"
+        ],
+        "west": [
+          "animations/Walking-a5b54fbd/west/frame_000.png",
+          "animations/Walking-a5b54fbd/west/frame_001.png",
+          "animations/Walking-a5b54fbd/west/frame_002.png",
+          "animations/Walking-a5b54fbd/west/frame_003.png",
+          "animations/Walking-a5b54fbd/west/frame_004.png",
+          "animations/Walking-a5b54fbd/west/frame_005.png",
+          "animations/Walking-a5b54fbd/west/frame_006.png",
+          "animations/Walking-a5b54fbd/west/frame_007.png"
+        ],
+        "north": [
+          "animations/Walking-a5b54fbd/north/frame_000.png",
+          "animations/Walking-a5b54fbd/north/frame_001.png",
+          "animations/Walking-a5b54fbd/north/frame_002.png",
+          "animations/Walking-a5b54fbd/north/frame_003.png",
+          "animations/Walking-a5b54fbd/north/frame_004.png",
+          "animations/Walking-a5b54fbd/north/frame_005.png",
+          "animations/Walking-a5b54fbd/north/frame_006.png",
+          "animations/Walking-a5b54fbd/north/frame_007.png"
+        ]
+      },
+      "Surprise_Uppercut-5aabbbd1": {
+        "south": [
+          "animations/Surprise_Uppercut-5aabbbd1/south/frame_000.png",
+          "animations/Surprise_Uppercut-5aabbbd1/south/frame_001.png",
+          "animations/Surprise_Uppercut-5aabbbd1/south/frame_002.png",
+          "animations/Surprise_Uppercut-5aabbbd1/south/frame_003.png",
+          "animations/Surprise_Uppercut-5aabbbd1/south/frame_004.png",
+          "animations/Surprise_Uppercut-5aabbbd1/south/frame_005.png",
+          "animations/Surprise_Uppercut-5aabbbd1/south/frame_006.png"
+        ]
+      },
+      "Point_and_laugh-033f2884": {
+        "south": [
+          "animations/Point_and_laugh-033f2884/south/frame_000.png",
+          "animations/Point_and_laugh-033f2884/south/frame_001.png",
+          "animations/Point_and_laugh-033f2884/south/frame_002.png",
+          "animations/Point_and_laugh-033f2884/south/frame_003.png",
+          "animations/Point_and_laugh-033f2884/south/frame_004.png",
+          "animations/Point_and_laugh-033f2884/south/frame_005.png",
+          "animations/Point_and_laugh-033f2884/south/frame_006.png",
+          "animations/Point_and_laugh-033f2884/south/frame_007.png",
+          "animations/Point_and_laugh-033f2884/south/frame_008.png"
+        ]
+      },
+      "Smile_and_thumbs_up_with_right_hand-12506ce7": {
+        "south": [
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_000.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_001.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_002.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_003.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_004.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_005.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_006.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_007.png",
+          "animations/Smile_and_thumbs_up_with_right_hand-12506ce7/south/frame_008.png"
+        ]
+      },
+      "Crouching-d70ac509": {
+        "north": [
+          "animations/Crouching-d70ac509/north/frame_000.png",
+          "animations/Crouching-d70ac509/north/frame_001.png",
+          "animations/Crouching-d70ac509/north/frame_002.png",
+          "animations/Crouching-d70ac509/north/frame_003.png",
+          "animations/Crouching-d70ac509/north/frame_004.png"
+        ]
+      },
+      "Falling_Back_Death-b9d8d4cd": {
+        "south": [
+          "animations/Falling_Back_Death-b9d8d4cd/south/frame_000.png",
+          "animations/Falling_Back_Death-b9d8d4cd/south/frame_001.png",
+          "animations/Falling_Back_Death-b9d8d4cd/south/frame_002.png",
+          "animations/Falling_Back_Death-b9d8d4cd/south/frame_003.png",
+          "animations/Falling_Back_Death-b9d8d4cd/south/frame_004.png",
+          "animations/Falling_Back_Death-b9d8d4cd/south/frame_005.png",
+          "animations/Falling_Back_Death-b9d8d4cd/south/frame_006.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-05-02T03:13:08.837066"
+}
