@@ -1,103 +1,161 @@
 {
-    "name": "git-gud-vscode",
-    "publisher": "git-gud",
-    "version": "0.1.0",
-    "main": "dist/extension.js",
-    "engines": {
-        "vscode": "^1.85.0"
-    },
-    "activationEvents": [
-        "onStartupFinished"
+  "name": "git-gud-vscode",
+  "displayName": "Git Gud",
+  "description": "Competitive Git coaching with esports-style roasts and rankings",
+  "version": "0.1.0",
+  "publisher": "git-gud",
+  "license": "MIT",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "keywords": [
+    "git",
+    "gamification",
+    "productivity",
+    "roasts",
+    "esports",
+    "leaderboard"
+  ],
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Visualization"
+  ],
+  "main": "dist/extension.js",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitgud.showStatus",
+        "title": "Show Status",
+        "category": "Git Gud"
+      },
+      {
+        "command": "gitgud.showDashboard",
+        "title": "Show Dashboard",
+        "category": "Git Gud"
+      },
+      {
+        "command": "gitgud.resetStats",
+        "title": "Reset Stats",
+        "category": "Git Gud"
+      },
+      {
+        "command": "gitgud.toggleSound",
+        "title": "Toggle Sound",
+        "category": "Git Gud"
+      },
+      {
+        "command": "gitgud.showProfile",
+        "title": "Show Profile",
+        "category": "Git Gud"
+      },
+      {
+        "command": "gitgud.testRoast",
+        "title": "Test Roast (Demo)",
+        "category": "Git Gud"
+      },
+      {
+        "command": "gitgud.shareToTeam",
+        "title": "Share Stats to Team",
+        "category": "Git Gud"
+      },
+      {
+        "command": "gitgud.setModel",
+        "title": "Set AI Model",
+        "category": "Git Gud"
+      }
     ],
-    "contributes": {
-        "commands": [
-            {
-                "command": "gitgud.showStatus",
-                "title": "Show Status",
-                "category": "Git Gud"
-            },
-            {
-                "command": "gitgud.showDashboard",
-                "title": "Show Dashboard",
-                "category": "Git Gud"
-            },
-            {
-                "command": "gitgud.resetStats",
-                "title": "Reset Stats",
-                "category": "Git Gud"
-            },
-            {
-                "command": "gitgud.toggleSound",
-                "title": "Toggle Sound",
-                "category": "Git Gud"
-            },
-            {
-                "command": "gitgud.showProfile",
-                "title": "Show Profile",
-                "category": "Git Gud"
-            },
-            {
-                "command": "gitgud.testRoast",
-                "title": "Test Roast (Demo)",
-                "category": "Git Gud"
-            }
-        ],
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "gitgud-sidebar",
-                    "title": "Git Gud",
-                    "icon": "$(flame)"
-                }
-            ]
-        },
-        "views": {
-            "gitgud-sidebar": [
-                {
-                    "type": "webview",
-                    "id": "gitgud-dashboard",
-                    "name": "Dashboard"
-                }
-            ]
-        },
-        "configuration": {
-            "title": "Git Gud",
-            "properties": {
-                "gitgud.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enable Git Gud extension"
-                },
-                "gitgud.soundEnabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enable sound effects"
-                },
-                "gitgud.notificationsEnabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show notification popups"
-                },
-                "gitgud.roastIntensity": {
-                    "type": "string",
-                    "enum": ["mild", "medium", "savage"],
-                    "default": "medium",
-                    "description": "Roast severity level"
-                }
-            }
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gitgud-sidebar",
+          "title": "Git Gud",
+          "icon": "$(flame)"
         }
+      ]
     },
-    "scripts": {
-        "build": "tsc",
-        "vscode:prepublish": "npm run build",
-        "package": "npx @vscode/vsce package --no-dependencies"
+    "views": {
+      "gitgud-sidebar": [
+        {
+          "type": "webview",
+          "id": "gitgud-dashboard",
+          "name": "Dashboard"
+        }
+      ]
     },
-    "dependencies": {
-        "@git-gud/core": "*"
-    },
-    "devDependencies": {
-        "typescript": "^5.0.0",
-        "@types/vscode": "^1.85.0",
-        "@types/node": "^20.0.0"
+    "configuration": {
+      "title": "Git Gud",
+      "properties": {
+        "gitgud.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Git Gud extension"
+        },
+        "gitgud.soundEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable sound effects"
+        },
+        "gitgud.notificationsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notification popups"
+        },
+        "gitgud.roastIntensity": {
+          "type": "string",
+          "enum": ["mild", "medium", "savage"],
+          "default": "medium",
+          "description": "Roast severity level"
+        },
+        "gitgud.aiProvider": {
+          "type": "string",
+          "enum": ["template", "ollama", "gemini"],
+          "default": "template",
+          "description": "AI provider for roast generation"
+        },
+        "gitgud.aiModel": {
+          "type": "string",
+          "default": "kimi-k2.6:cloud",
+          "description": "Ollama model name"
+        },
+        "gitgud.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for AI provider"
+        },
+        "gitgud.teamCode": {
+          "type": "string",
+          "default": "",
+          "description": "Team code for shared leaderboard"
+        },
+        "gitgud.syncUrl": {
+          "type": "string",
+          "default": "http://localhost:3000/api/sync",
+          "description": "URL to sync stats to web leaderboard"
+        }
+      }
     }
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node20 --external:vscode --outfile=dist/extension.js --allow-overwrite",
+    "vscode:prepublish": "npm run build",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@git-gud/core": "*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0",
+    "typescript": "^5.0.0",
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0"
+  }
 }

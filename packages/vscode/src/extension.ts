@@ -99,6 +99,48 @@ export function activate(context: vscode.ExtensionContext) {
 
             outputChannel.appendLine(`[Test] Demo roast fired!`);
         }),
+        vscode.commands.registerCommand('gitgud.shareToTeam', async () => {
+            const config = vscode.workspace.getConfiguration('gitgud');
+            const syncUrl = config.get<string>('syncUrl', 'http://localhost:3000/api/sync');
+            const teamCode = config.get<string>('teamCode', '');
+
+            if (!teamCode) {
+                const code = await vscode.window.showInputBox({ prompt: 'Enter your team code (or create one)' });
+                if (code) {
+                    await config.update('teamCode', code, true);
+                } else {
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(syncUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        teamCode: config.get('teamCode'),
+                        player: playerState,
+                        timestamp: Date.now(),
+                    }),
+                });
+                if (response.ok) {
+                    vscode.window.showInformationMessage('Git Gud: Stats synced to team leaderboard!');
+                } else {
+                    vscode.window.showWarningMessage('Git Gud: Failed to sync stats.');
+                }
+            } catch {
+                vscode.window.showWarningMessage('Git Gud: Could not connect to sync server.');
+            }
+        }),
+        vscode.commands.registerCommand('gitgud.setModel', async () => {
+            const models = ['template', 'ollama', 'gemini'];
+            const pick = await vscode.window.showQuickPick(models, { placeHolder: 'Select AI roast provider' });
+            if (pick) {
+                const config = vscode.workspace.getConfiguration('gitgud');
+                await config.update('aiProvider', pick, true);
+                vscode.window.showInformationMessage(`Git Gud: AI provider set to ${pick}.`);
+            }
+        }),
     ];
     context.subscriptions.push(...commands);
 
@@ -140,9 +182,11 @@ export function activate(context: vscode.ExtensionContext) {
         sidebarProvider.update(playerState);
 
         // Notifications
-        showRoastNotification(result.roast, result.analysis);
-        showRankChangeNotification(result.rank);
-        showAchievementNotification(result.achievements);
+        if (config.get<boolean>('notificationsEnabled', true)) {
+            showRoastNotification(result.roast, result.analysis);
+            showRankChangeNotification(result.rank);
+            showAchievementNotification(result.achievements);
+        }
 
         outputChannel.appendLine(`[Pipeline] ${event.type} | Score: ${result.score.total} (+${result.score.delta}) | Roast: ${result.roast.message.slice(0, 60)}...`);
     }, disposables);
