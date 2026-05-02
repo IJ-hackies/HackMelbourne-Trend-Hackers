@@ -2,8 +2,6 @@
 
 **Gamify your Git workflow with esports-style roasts and rankings.**
 
-![Git Gud](icon.png)
-
 ## Features
 
 - **Real-time Git monitoring** — Watches your commits, pushes, merges, and more
