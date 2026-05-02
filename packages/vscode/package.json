@@ -1,5 +1,6 @@
 {
     "name": "git-gud-vscode",
+    "publisher": "git-gud",
     "version": "0.1.0",
     "main": "dist/extension.js",
     "engines": {
@@ -55,8 +56,7 @@
                 {
                     "type": "webview",
                     "id": "gitgud-dashboard",
-                    "name": "Dashboard",
-                    "when": "gitgud.enabled"
+                    "name": "Dashboard"
                 }
             ]
         },

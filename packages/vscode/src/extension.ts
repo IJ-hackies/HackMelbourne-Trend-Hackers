@@ -17,6 +17,9 @@ export function activate(context: vscode.ExtensionContext) {
     const outputChannel = getOutputChannel();
     outputChannel.appendLine('Git Gud extension activated');
 
+    // Set context key so sidebar view shows up
+    vscode.commands.executeCommand('setContext', 'gitgud.enabled', true);
+
     // Load persisted state
     playerState = loadState(context);
 
@@ -56,6 +59,11 @@ export function activate(context: vscode.ExtensionContext) {
             const current = config.get<boolean>('soundEnabled', true);
             config.update('soundEnabled', !current, true);
             vscode.window.showInformationMessage(`Git Gud sounds ${!current ? 'enabled' : 'disabled'}.`);
+        }),
+        vscode.commands.registerCommand('gitgud.showProfile', () => {
+            vscode.window.showInformationMessage(
+                `Git Gud Profile — Rank: ${playerState.rank.name} | Score: ${playerState.score.total} | Personality: ${playerState.personality.type} | Achievements: ${playerState.achievements.length}`
+            );
         }),
         vscode.commands.registerCommand('gitgud.testRoast', () => {
             const testEvent: GitEvent = {
