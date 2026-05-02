@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Git Gud
 
-## Getting Started
+Competitive Git for dangerously overconfident developers. A VS Code extension that watches your Git activity and reacts like a toxic esports gaming coach.
 
-First, run the development server:
+## Features
+
+- **AI-Powered Roasts** — Ollama (default) or Gemini generate contextual roasts for bad Git habits
+- **Template Fallback** — 60+ hand-written roast templates when AI is unavailable
+- **Scoring & Ranking** — Bronze to Diamond rank ladder with severity-based scoring
+- **20 Achievements** — Unlock achievements for your Git crimes (and virtues)
+- **Personality System** — 7 developer archetypes classified from your behavior
+- **Teammate Suffering Index** — How much pain you inflict on collaborators (0-100)
+- **Per-Block Merge Conflict Tracking** — Individual roasts for each conflict resolution decision
+- **Rich Dashboard** — Full sidebar with rank, stats, offenses, achievements with progress bars
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open `packages/vscode` in VS Code and press F5 to launch the extension host.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Monorepo with npm workspaces:
+- `packages/core` — Shared logic (analysis, scoring, roasts, achievements, personality)
+- `packages/vscode` — VS Code extension (UI, event detection, notifications)
+- `packages/web` — Next.js site (placeholder)

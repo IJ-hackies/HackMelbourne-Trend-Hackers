@@ -5,11 +5,18 @@ export type GitEventType =
   | 'force-push'
   | 'rebase'
   | 'merge'
-  | 'merge-conflict';
+  | 'merge-conflict'
+  | 'merge-conflict-resolved'
+  | 'conflict-block-preview'
+  | 'conflict-block-resolved'
+  | 'file-fully-resolved'
+  | 'rebase-complete'
+  | 'push-to-main';
 
 export interface GitEvent {
   type: GitEventType;
   timestamp: number;
+  repoPath?: string;
   metadata: Record<string, unknown>;
 }
 
@@ -34,10 +41,31 @@ export interface Achievement {
   progress: number;
 }
 
+export interface AchievementTrigger {
+  type: 'first_occurrence' | 'cumulative' | 'streak';
+  eventType?: GitEventType;
+  statKey?: string;
+  threshold?: number;
+}
+
+export interface AchievementDefinition {
+  id: string;
+  name: string;
+  description: string;
+  trigger: AchievementTrigger;
+}
+
 export interface Roast {
   message: string;
   severity: 'mild' | 'medium' | 'savage';
   advice: string;
+}
+
+export interface RoastResult {
+  roast: string;
+  advice: string;
+  eventType: GitEventType;
+  timestamp: number;
 }
 
 export interface PlayerStats {
@@ -65,4 +93,7 @@ export interface PlayerStats {
   commitsInCurrentSession: number;
   averageCommitSize: number;
   score: number;
+  goodCommitStreak: number;
+  totalConflictsResolved: number;
+  totalRebaseCompletes: number;
 }

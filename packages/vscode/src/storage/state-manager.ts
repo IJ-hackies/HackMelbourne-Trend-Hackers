@@ -221,6 +221,9 @@ export class StateManager {
         commitsInCurrentSession: 0,
         averageCommitSize: 0,
         score: 0,
+        goodCommitStreak: 0,
+        totalConflictsResolved: 0,
+        totalRebaseCompletes: 0,
       },
       unlockedAchievements: new Set(),
     };

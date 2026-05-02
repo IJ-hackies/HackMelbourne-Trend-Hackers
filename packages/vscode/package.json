@@ -3,65 +3,49 @@
   "displayName": "Git Gud",
   "description": "Competitive Git coaching with esports-style roasts",
   "version": "0.1.0",
-  "engines": {
-    "vscode": "^1.85.0"
-  },
+  "engines": { "vscode": "^1.85.0" },
   "main": "dist/extension.js",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": ["workspaceContains:.git", "onView:gitgud.sidebar"],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "gitgud", "title": "Git Gud", "icon": "$(flame)" }
+      ]
+    },
+    "views": {
+      "gitgud": [
+        { "type": "webview", "id": "gitgud.sidebar", "name": "Dashboard" }
+      ]
+    },
     "commands": [
-      {
-        "command": "gitgud.showStatus",
-        "title": "Git Gud: Show Status"
-      },
-      {
-        "command": "gitgud.resetStats",
-        "title": "Git Gud: Reset Stats"
-      },
-      {
-        "command": "gitgud.showProfile",
-        "title": "Git Gud: Show Profile"
-      }
+      { "command": "gitgud.showDashboard", "title": "Git Gud: Show Dashboard" },
+      { "command": "gitgud.resetStats", "title": "Git Gud: Reset Stats" },
+      { "command": "gitgud.setApiKey", "title": "Git Gud: Set API Key" }
     ],
     "configuration": {
       "title": "Git Gud",
       "properties": {
-        "gitgud.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable or disable Git Gud event monitoring and roasts."
-        },
-        "gitgud.notificationsEnabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show notification popups when git events are detected."
-        },
-        "gitgud.ollamaApiKey": {
-          "type": "string",
-          "default": "",
-          "description": "API key for Ollama cloud AI roast generation. Leave empty to use template roasts."
-        },
-        "gitgud.ollamaModel": {
-          "type": "string",
-          "default": "",
-          "description": "Ollama model to use for AI roasts (default: kimi-k2.6:cloud)."
-        },
-        "gitgud.ollamaBaseUrl": {
-          "type": "string",
-          "default": "",
-          "description": "Base URL for the Ollama API (default: https://ollama.com/v1)."
-        }
+        "gitgud.enabled": { "type": "boolean", "default": true, "description": "Enable Git Gud monitoring." },
+        "gitgud.aiProvider": { "type": "string", "default": "ollama", "enum": ["ollama", "gemini"], "description": "AI provider for roast generation." },
+        "gitgud.ollamaApiKey": { "type": "string", "default": "", "description": "API key for Ollama AI roasts." },
+        "gitgud.ollamaModel": { "type": "string", "default": "", "description": "Ollama model (default: kimi-k2.6:cloud)." },
+        "gitgud.ollamaBaseUrl": { "type": "string", "default": "", "description": "Ollama API base URL." },
+        "gitgud.geminiApiKey": { "type": "string", "default": "", "description": "Gemini API key." }
       }
     }
   },
   "scripts": {
-    "build": "tsc"
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch"
   },
   "dependencies": {
     "@git-gud/core": "*"
   },
   "devDependencies": {
+    "@types/node": "^20",
     "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0",
     "typescript": "^5"
   }
 }

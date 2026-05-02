@@ -1,117 +1,133 @@
-import type { Roast } from '../types';
+import type { Roast, GitEvent } from '../types';
 import type { AnyVerdict } from '../analysis/types';
-import { buildBrainrotPromptSection } from './brainrot';
+import { pickMemePool } from '../memes';
 
-export interface RoastConfig {
-  ollamaApiKey: string;
-  ollamaModel?: string;
-  ollamaBaseUrl?: string;
+export interface OllamaConfig {
+  apiKey: string;
+  model?: string;
+  baseUrl?: string;
 }
 
 const DEFAULT_MODEL = 'kimi-k2.6:cloud';
 const DEFAULT_BASE_URL = 'https://ollama.com/v1';
 
-const SYSTEM_PROMPT = `You are the roast engine for "Git Gud" — a competitive esports-themed Git coaching tool that treats everyday Git usage like a ranked competitive game.
+const SIX_SEVEN_RE = /\b(67|6-7|6\.7|six[\s-]?seven)\b/i;
 
-YOUR PERSONA:
-- Toxic competitive gaming coach who's seen too many ranked matches
-- Esports commentator having a dramatic breakdown over mundane Git mistakes
-- Anime battle narrator describing a developer's git crimes
-- The energy of a disappointed League of Legends teammate in voice chat
+function detectSixSeven(event?: GitEvent): boolean {
+  if (!event) return false;
+  const m = event.metadata;
+  const haystack = Object.values(m).filter(v => typeof v === 'string').join('\n');
+  return SIX_SEVEN_RE.test(haystack);
+}
 
-TONE:
-- Overdramatic — treat a bad commit message like a blown championship match
-- Mix competitive gaming language with current internet/brainrot slang
-- Be genuinely funny, not just mean — the humor comes from the absurd contrast
-- Every roast MUST include real, actionable Git advice
+function buildSystemPrompt(sixSevenTriggered: boolean): string {
+  const pool = pickMemePool({ perCategory: 2, totalCap: 14 });
+  const slangLine = pool.map(s => `"${s}"`).join(', ');
 
-${buildBrainrotPromptSection()}
+  const sixSevenDirective = sixSevenTriggered
+    ? `\n\n!! SIX-SEVEN ALERT !!\nThe number 67 (or "6-7", "six seven") was detected in the Git context this turn. You MUST reference the "six seven" / "6-7" meme in your roast (origin: Skrilla "Doot Doot 6 7", amplified by LaMelo Ball being 6'7", became a brainrot kid meme where everyone yells "SIX SEVEN" with hand gestures). Drop "six seven", "SIX SEVEN", or "6-7" into the roast naturally — it's mandatory this turn, not optional.\n`
+    : '';
 
-RULES:
-1. Roast message: 1-2 sentences max. Punchy, quotable, shareable.
-2. Advice: 1 sentence of genuine, practical Git advice. This is the educational part — take it seriously.
-3. Severity: "mild" (light teasing), "medium" (proper roast), "savage" (absolutely destroyed)
-4. Match severity to how bad the violation actually is (force push to main = savage, no branch prefix = mild)
-5. Reference the SPECIFIC details of the violation (the actual commit message, branch name, etc.)
-6. Use brainrot slang naturally — don't stuff every term in, pick 1-2 that fit
-7. Never repeat the same joke structure twice in a row
+  return `You are a toxic esports gaming coach who has been mistakenly assigned to coach a software developer on their Git habits. You speak with overdramatic esports commentary energy and current internet slang.${sixSevenDirective}
 
-Respond with ONLY a valid JSON object, no markdown fences, no explanation:
-{"message": "the roast", "severity": "mild|medium|savage", "advice": "genuine advice"}`;
+VOCAB POOL FOR THIS ROAST (weave in 1-2 of these naturally if they fit; do NOT force all of them; do NOT list them):
+${slangLine}
+
+ANTI-CRUTCH RULES:
+- DO NOT default to "skibidi", "ohio", "fanum tax", or "sigma" unless the pool above includes them this turn — those words are overused, vary your vocab.
+- Vary your sentence openers — avoid starting every roast with "Bro,".
+- Mix registers: sometimes esports caster, sometimes finance bro, sometimes anime nerd, sometimes Twitter discourse, sometimes weary unc, sometimes streamer-drama-tweet, sometimes Italian-brainrot-character-impersonator.
+- Be specific to THIS event, not generic "your Git is bad" energy.
+
+REFERENCE USAGE NOTES:
+- Italian brainrot names (Tralalero Tralala, Bombardiro Crocodilo, Cappuccino Assassino, etc.) are absurd AI-creature characters — invoke them as named entities.
+- Streamer drama quotes ("my exp bar is low", "only cuz you're here") are sound bites used in TikTok edits — drop them as deadpan reactions.
+- Scuba dance = Nick Wilde from Zootopia 2 plugging his nose and waving his hand — reference as a dodging/escaping move.
+- Dirty laundry dance = stiff awkward AI-buzz-cut character; reference for cringe/rigid behavior.
+- AI fruit videos = surreal anthropomorphic fruit drama on Reels; reference for absurd/chaotic energy.
+
+STRICT FORMAT:
+ROAST: <one short sentence, max 20 words>
+ADVICE: <one short sentence, max 20 words>
+
+No markdown, no emojis, no quotes, no extra lines. Be punchy.`;
+}
 
 function buildUserPrompt(verdict: AnyVerdict): string {
   const lines = [
-    `A developer just committed a Git violation:`,
-    ``,
+    `Git violation detected:`,
     `Category: ${verdict.category}`,
-    `Violation type: ${verdict.pattern}`,
-    `What happened: ${verdict.message}`,
+    `Type: ${verdict.pattern}`,
+    `Context: ${verdict.message}`,
   ];
-
   if (verdict.subject) {
-    lines.push(`Specific content: "${verdict.subject}"`);
+    lines.push(`Content: "${verdict.subject}"`);
   }
-
-  lines.push('', 'Generate a roast for this violation.');
+  lines.push('', 'Roast this violation. Follow the STRICT FORMAT.');
   return lines.join('\n');
 }
 
-function parseRoastResponse(text: string): Roast {
-  const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+function parseResponse(text: string): Roast | null {
+  const roastMatch = text.match(/ROAST:\s*(.+?)(?=\n|ADVICE:|$)/is);
+  const adviceMatch = text.match(/ADVICE:\s*(.+?)$/is);
+  let roast = roastMatch?.[1]?.trim() ?? '';
+  let advice = adviceMatch?.[1]?.trim() ?? '';
 
-  const parsed = JSON.parse(cleaned);
-
-  if (!parsed.message || !parsed.severity || !parsed.advice) {
-    throw new Error('Missing required fields in AI response');
+  if (!roast) {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    roast = lines[0] ?? text;
+    advice = lines.length > 1 ? lines[lines.length - 1] : '';
   }
 
-  const severity = parsed.severity as string;
-  if (severity !== 'mild' && severity !== 'medium' && severity !== 'savage') {
-    throw new Error(`Invalid severity: ${severity}`);
-  }
+  if (roast.length > 200) roast = roast.slice(0, 197) + '...';
+  if (advice.length > 200) advice = advice.slice(0, 197) + '...';
 
-  return {
-    message: String(parsed.message),
-    severity: severity,
-    advice: String(parsed.advice),
-  };
+  const severity = determineSeverity(roast);
+  return { message: roast, severity, advice };
 }
 
-export async function generateAIRoast(
+function determineSeverity(roast: string): Roast['severity'] {
+  const savage = /\b(cooked|absolutely|destroyed|nuclear|catastroph|criminal)\b/i;
+  const medium = /\b(terrible|awful|bad|mess|chaos|disaster)\b/i;
+  if (savage.test(roast)) return 'savage';
+  if (medium.test(roast)) return 'medium';
+  return 'mild';
+}
+
+export async function generateOllamaRoast(
   verdict: AnyVerdict,
-  config: RoastConfig,
+  config: OllamaConfig,
+  event?: GitEvent,
 ): Promise<Roast> {
-  const baseUrl = config.ollamaBaseUrl ?? DEFAULT_BASE_URL;
-  const model = config.ollamaModel ?? DEFAULT_MODEL;
+  const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
+  const model = config.model ?? DEFAULT_MODEL;
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${config.ollamaApiKey}`,
+      'Authorization': `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: buildSystemPrompt(detectSixSeven(event)) },
         { role: 'user', content: buildUserPrompt(verdict) },
       ],
-      temperature: 0.9,
-      max_tokens: 2048,
+      temperature: 1.0,
+      max_tokens: 250,
     }),
   });
 
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(`Ollama API error ${response.status}: ${body}`);
+    throw new Error(`Ollama API error ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as any;
   const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Empty response from Ollama');
 
-  if (!content) {
-    throw new Error('Empty response from Ollama API');
-  }
-
-  return parseRoastResponse(content);
+  const result = parseResponse(content);
+  if (!result) throw new Error('Failed to parse roast response');
+  return result;
 }
