@@ -106,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
           });
         }
       }
-      await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements);
+      await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements, result.combinedRoast);
     }
 
     refreshSidebar();

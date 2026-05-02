@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
 import type { Roast, RankEvaluation, Achievement } from '@git-gud/core';
 
-const SEVERITY_RANK: Record<string, number> = { savage: 3, medium: 2, mild: 1 };
-
 // Slang prefixes per severity level
 const SLANG_PREFIXES: Record<string, string[]> = {
   savage: ['BROOO', 'NAHHHH', 'FATALITY', 'CLIP THAT', 'AINT NO WAY', 'REPORTED', 'UNHINGED BEHAVIOR'],
@@ -17,13 +15,6 @@ function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function pickBestRoast(roasts: Roast[]): Roast | undefined {
-  if (roasts.length === 0) return undefined;
-  return roasts.reduce((best, r) =>
-    (SEVERITY_RANK[r.severity] ?? 0) > (SEVERITY_RANK[best.severity] ?? 0) ? r : best,
-  );
-}
-
 /** Adjust severity based on the roastIntensity setting */
 function adjustSeverity(severity: string, intensity: string): string {
   if (intensity === 'mild' && severity === 'savage') return 'medium';
@@ -36,6 +27,7 @@ export async function showRoastNotifications(
   roasts: Roast[],
   rankEvaluation: RankEvaluation,
   newAchievements: Achievement[],
+  combinedRoast?: Roast | null,
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('gitgud');
   if (!config.get<boolean>('notificationsEnabled', true)) {
@@ -44,7 +36,7 @@ export async function showRoastNotifications(
 
   const intensity = config.get<string>('roastIntensity', 'savage') ?? 'savage';
 
-  const roast = pickBestRoast(roasts);
+  const roast = combinedRoast ?? roasts[0];
   if (roast) {
     const effectiveSeverity = adjustSeverity(roast.severity, intensity);
     const prefix = randomPick(SLANG_PREFIXES[effectiveSeverity] ?? SLANG_PREFIXES.mild);
