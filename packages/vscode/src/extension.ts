@@ -32,6 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
       playerState,
       stateManager.getEventHistory(),
       config.soundEnabled,
+      { apiKey: config.ollamaApiKey, model: config.ollamaModel, baseUrl: config.ollamaBaseUrl },
     );
     sidebarProvider.updateState(data);
   }

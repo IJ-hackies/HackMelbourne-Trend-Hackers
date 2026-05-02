@@ -24,6 +24,9 @@ export interface SidebarData {
     totalBranchSwitches: number;
   };
   soundEnabled: boolean;
+  ollamaApiKey: string;
+  ollamaModel: string;
+  ollamaBaseUrl: string;
 }
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
@@ -51,6 +54,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((msg) => {
       if (msg.type === 'ready' && this._pendingData) {
         this._postState(this._pendingData);
+      } else if (msg.type === 'saveSettings') {
+        const cfg = vscode.workspace.getConfiguration('gitgud');
+        cfg.update('ollamaApiKey', msg.ollamaApiKey || '', true);
+        cfg.update('ollamaModel', msg.ollamaModel || '', true);
+        cfg.update('ollamaBaseUrl', msg.ollamaBaseUrl || '', true);
       }
     });
   }
@@ -59,6 +67,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     playerState: PlayerState,
     eventHistory: StoredEvent[],
     soundEnabled: boolean,
+    ollamaConfig?: { apiKey: string; model: string; baseUrl: string },
   ): SidebarData {
     const rankIdx = RANK_LADDER.findIndex(r => r.id === playerState.rank.id);
     const nextRank = rankIdx < RANK_LADDER.length - 1 ? RANK_LADDER[rankIdx + 1] : null;
@@ -99,6 +108,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         totalBranchSwitches: playerState.stats.totalBranchSwitches,
       },
       soundEnabled,
+      ollamaApiKey: ollamaConfig?.apiKey ?? '',
+      ollamaModel: ollamaConfig?.model ?? '',
+      ollamaBaseUrl: ollamaConfig?.baseUrl ?? '',
     };
   }
 
@@ -377,6 +389,78 @@ body {
   margin-left: 4px;
 }
 
+/* SETTINGS */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+.settings-toggle .arrow {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+.settings-toggle .arrow.open { transform: rotate(90deg); }
+.settings-body { display: none; margin-top: 8px; }
+.settings-body.open { display: block; }
+.settings-field { margin-bottom: 8px; }
+.settings-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  color: var(--vscode-descriptionForeground);
+}
+.settings-input {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: var(--vscode-font-family, monospace);
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-widget-border, #555));
+  border-radius: 3px;
+  outline: none;
+}
+.settings-input:focus {
+  border-color: var(--vscode-focusBorder, var(--accent));
+}
+.settings-hint {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+  opacity: 0.7;
+}
+.settings-save {
+  margin-top: 4px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.settings-save:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+.settings-saved {
+  font-size: 11px;
+  color: var(--positive);
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.settings-saved.show { opacity: 1; }
+.settings-status {
+  font-size: 11px;
+  margin-top: 6px;
+}
+.settings-status.connected { color: var(--positive); }
+.settings-status.disconnected { color: var(--vscode-descriptionForeground); }
+
 /* LOADING */
 .loading {
   text-align: center;
@@ -554,7 +638,67 @@ body {
     html += '</div>';
     html += '</div>';
 
+    // SETTINGS CARD
+    html += '<div class="card">';
+    html += '<div class="settings-toggle" id="settings-toggle">';
+    html += '<span class="card-title" style="margin-bottom:0">\\u{2699}\\u{FE0F} AI Roast Settings</span>';
+    html += '<span class="arrow" id="settings-arrow">\\u{25B6}</span>';
+    html += '</div>';
+    html += '<div class="settings-body" id="settings-body">';
+
+    html += '<div class="settings-field">';
+    html += '<label class="settings-label">API Key</label>';
+    html += '<input class="settings-input" type="password" id="cfg-apikey" value="' + esc(d.ollamaApiKey) + '" placeholder="Enter API key..." />';
+    html += '</div>';
+
+    html += '<div class="settings-field">';
+    html += '<label class="settings-label">Model</label>';
+    html += '<input class="settings-input" type="text" id="cfg-model" value="' + esc(d.ollamaModel) + '" placeholder="kimi-k2.6:cloud" />';
+    html += '<div class="settings-hint">Leave blank for default</div>';
+    html += '</div>';
+
+    html += '<div class="settings-field">';
+    html += '<label class="settings-label">Base URL</label>';
+    html += '<input class="settings-input" type="text" id="cfg-baseurl" value="' + esc(d.ollamaBaseUrl) + '" placeholder="https://ollama.com/v1" />';
+    html += '<div class="settings-hint">Leave blank for default</div>';
+    html += '</div>';
+
+    html += '<div style="display:flex;align-items:center">';
+    html += '<button class="settings-save" id="settings-save">Save</button>';
+    html += '<span class="settings-saved" id="settings-saved">Saved!</span>';
+    html += '</div>';
+
+    const hasKey = d.ollamaApiKey && d.ollamaApiKey.length > 0;
+    html += '<div class="settings-status ' + (hasKey ? 'connected' : 'disconnected') + '">';
+    html += hasKey ? '\\u{2705} AI roasts enabled' : '\\u{26A0}\\u{FE0F} No API key — using template roasts';
+    html += '</div>';
+
+    html += '</div>';
+    html += '</div>';
+
     root.innerHTML = html;
+
+    // Bind settings interactions after render
+    var toggle = document.getElementById('settings-toggle');
+    var body = document.getElementById('settings-body');
+    var arrow = document.getElementById('settings-arrow');
+    if (toggle && body && arrow) {
+      toggle.addEventListener('click', function() {
+        body.classList.toggle('open');
+        arrow.classList.toggle('open');
+      });
+    }
+    var saveBtn = document.getElementById('settings-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function() {
+        var apikey = document.getElementById('cfg-apikey').value;
+        var model = document.getElementById('cfg-model').value;
+        var baseurl = document.getElementById('cfg-baseurl').value;
+        vscode.postMessage({ type: 'saveSettings', ollamaApiKey: apikey, ollamaModel: model, ollamaBaseUrl: baseurl });
+        var saved = document.getElementById('settings-saved');
+        if (saved) { saved.classList.add('show'); setTimeout(function() { saved.classList.remove('show'); }, 2000); }
+      });
+    }
   }
 
   // Web Audio API sound synthesis
