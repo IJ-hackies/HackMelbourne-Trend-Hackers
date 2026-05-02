@@ -12,3 +12,5 @@ export { calculateSuffering, classifyPersonality } from './personality';
 export type { SufferingResult, PersonalityResult } from './personality';
 export { evaluate } from './evaluate';
 export type { PlayerState, EvaluationResult } from './evaluate';
+export { generateWeeklyReport } from './reports/weekly';
+export type { WeeklyReport, WeeklyMetric, WeeklyReportEvent } from './reports/weekly';

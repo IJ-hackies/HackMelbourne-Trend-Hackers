@@ -8,6 +8,7 @@ export interface GitGudConfig {
   ollamaModel: string;
   ollamaBaseUrl: string;
   geminiApiKey: string;
+  voiceEnabled: boolean;
 }
 
 export function getConfig(): GitGudConfig {
@@ -19,6 +20,7 @@ export function getConfig(): GitGudConfig {
     ollamaModel: c.get<string>('ollamaModel', ''),
     ollamaBaseUrl: c.get<string>('ollamaBaseUrl', ''),
     geminiApiKey: c.get<string>('geminiApiKey', ''),
+    voiceEnabled: c.get<boolean>('voiceEnabled', false),
   };
 }
 

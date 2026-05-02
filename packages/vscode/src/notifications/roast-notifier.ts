@@ -17,20 +17,21 @@ export async function showRoastNotifications(
 ): Promise<void> {
   const roast = pickBestRoast(roasts);
   if (roast) {
-    let action: string | undefined;
+    const onAction = (action: string | undefined) => {
+      if (action === 'Show Advice') {
+        vscode.window.showInformationMessage(`💡 ${roast.advice}`);
+      }
+    };
     switch (roast.severity) {
       case 'savage':
-        action = await vscode.window.showErrorMessage(`🔥 ${roast.message}`, 'Show Advice');
+        vscode.window.showErrorMessage(`🔥 ${roast.message}`, 'Show Advice').then(onAction);
         break;
       case 'medium':
-        action = await vscode.window.showWarningMessage(`⚠️ ${roast.message}`, 'Show Advice');
+        vscode.window.showWarningMessage(`⚠️ ${roast.message}`, 'Show Advice').then(onAction);
         break;
       default:
-        action = await vscode.window.showInformationMessage(`ℹ️ ${roast.message}`, 'Show Advice');
+        vscode.window.showInformationMessage(`ℹ️ ${roast.message}`, 'Show Advice').then(onAction);
         break;
-    }
-    if (action === 'Show Advice') {
-      vscode.window.showInformationMessage(`💡 ${roast.advice}`);
     }
   }
 

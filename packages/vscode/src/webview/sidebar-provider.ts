@@ -56,6 +56,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((msg) => {
       if (msg.type === 'ready' && this._pendingData) {
         this._postState(this._pendingData);
+      } else if (msg.type === 'runCommand' && typeof msg.command === 'string') {
+        vscode.commands.executeCommand(msg.command);
       } else if (msg.type === 'saveSettings') {
         const cfg = vscode.workspace.getConfiguration('gitgud');
         cfg.update('aiProvider', msg.aiProvider || 'ollama', true);
@@ -457,6 +459,38 @@ body {
 .settings-status.connected { color: var(--positive); }
 .settings-status.disconnected { color: var(--vscode-descriptionForeground); }
 
+/* ACTIONS */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.action-btn {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--vscode-font-family, sans-serif);
+  color: var(--vscode-foreground);
+  background: transparent;
+  border: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.12));
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.action-btn:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--vscode-focusBorder, var(--accent));
+}
+.action-btn.danger {
+  color: var(--negative);
+  border-color: rgba(225,112,85,0.35);
+}
+.action-btn.danger:hover {
+  background: rgba(225,112,85,0.08);
+  border-color: var(--negative);
+}
+
 /* LOADING */
 .loading {
   text-align: center;
@@ -634,6 +668,17 @@ body {
     html += '</div>';
     html += '</div>';
 
+    // ACTIONS CARD (placed near the bottom of the sidebar)
+    html += '<div class="card">';
+    html += '<div class="card-title">\\u{26A1} Actions</div>';
+    html += '<div class="action-grid">';
+    html += '<button class="action-btn" data-cmd="gitgud.runDemo">Demo</button>';
+    html += '<button class="action-btn" data-cmd="gitgud.exportRankCard">Rank Card</button>';
+    html += '<button class="action-btn" data-cmd="gitgud.weeklyReport">Report</button>';
+    html += '<button class="action-btn danger" data-cmd="gitgud.resetStats">Reset</button>';
+    html += '</div>';
+    html += '</div>';
+
     // SETTINGS CARD
     html += '<div class="card">';
     html += '<div class="settings-toggle" id="settings-toggle">';
@@ -689,6 +734,15 @@ body {
     html += '</div>';
 
     root.innerHTML = html;
+
+    // Bind action buttons
+    var actionBtns = document.querySelectorAll('.action-btn');
+    for (var i = 0; i < actionBtns.length; i++) {
+      actionBtns[i].addEventListener('click', function(e) {
+        var cmd = e.currentTarget.getAttribute('data-cmd');
+        if (cmd) vscode.postMessage({ type: 'runCommand', command: cmd });
+      });
+    }
 
     // Bind settings interactions after render
     var toggle = document.getElementById('settings-toggle');
@@ -807,6 +861,16 @@ body {
       render(msg.data);
     } else if (msg.type === 'playSound') {
       playSound(msg.sound);
+    } else if (msg.type === 'speakRoast' && msg.text) {
+      try {
+        if (typeof speechSynthesis !== 'undefined') {
+          const utt = new SpeechSynthesisUtterance(String(msg.text));
+          utt.rate = 1.05;
+          utt.pitch = 0.85;
+          speechSynthesis.cancel();
+          speechSynthesis.speak(utt);
+        }
+      } catch (_) {}
     }
   });
 

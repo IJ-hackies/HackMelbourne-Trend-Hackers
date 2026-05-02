@@ -20,7 +20,10 @@
     "commands": [
       { "command": "gitgud.showDashboard", "title": "Git Gud: Show Dashboard" },
       { "command": "gitgud.resetStats", "title": "Git Gud: Reset Stats" },
-      { "command": "gitgud.setApiKey", "title": "Git Gud: Set API Key" }
+      { "command": "gitgud.setApiKey", "title": "Git Gud: Set API Key" },
+      { "command": "gitgud.runDemo", "title": "Git Gud: Run Demo" },
+      { "command": "gitgud.exportRankCard", "title": "Git Gud: Export Rank Card" },
+      { "command": "gitgud.weeklyReport", "title": "Git Gud: Weekly Hygiene Report" }
     ],
     "configuration": {
       "title": "Git Gud",
@@ -30,7 +33,8 @@
         "gitgud.ollamaApiKey": { "type": "string", "default": "", "description": "API key for Ollama AI roasts." },
         "gitgud.ollamaModel": { "type": "string", "default": "", "description": "Ollama model (default: kimi-k2.6:cloud)." },
         "gitgud.ollamaBaseUrl": { "type": "string", "default": "", "description": "Ollama API base URL." },
-        "gitgud.geminiApiKey": { "type": "string", "default": "", "description": "Gemini API key." }
+        "gitgud.geminiApiKey": { "type": "string", "default": "", "description": "Gemini API key." },
+        "gitgud.voiceEnabled": { "type": "boolean", "default": false, "description": "Speak savage roasts and rank-ups out loud (browser SpeechSynthesis)." }
       }
     }
   },

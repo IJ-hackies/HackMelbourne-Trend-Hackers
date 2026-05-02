@@ -8,6 +8,9 @@ import { StateManager } from './storage/state-manager';
 import { SidebarProvider } from './webview/sidebar-provider';
 import { MergeConflictTracker } from './git/merge-conflict-tracker';
 import { getConfig, getRoastConfig, onConfigChange } from './config';
+import { runDemo } from './demo/demo-runner';
+import { renderRankCardSvg, tweetIntentUrl } from './rank-card/render';
+import { showWeeklyReport } from './reports/weekly-panel';
 
 let gitWatcher: GitWatcher | undefined;
 
@@ -87,6 +90,22 @@ export function activate(context: vscode.ExtensionContext) {
 
     const SILENT = new Set(['conflict-block-preview', 'file-fully-resolved']);
     if (!SILENT.has(event.type)) {
+      if (config.voiceEnabled) {
+        const savage = result.roasts.find((r) => r.severity === 'savage');
+        if (savage) {
+          sidebarProvider.postMessage({ type: 'speakRoast', text: savage.message });
+        } else if (result.rankEvaluation.promoted) {
+          sidebarProvider.postMessage({
+            type: 'speakRoast',
+            text: `Rank up! You are now ${result.rankEvaluation.rank.name}.`,
+          });
+        } else if (result.rankEvaluation.demoted && result.rankEvaluation.previousRank) {
+          sidebarProvider.postMessage({
+            type: 'speakRoast',
+            text: `Demoted to ${result.rankEvaluation.rank.name}. Do better.`,
+          });
+        }
+      }
       await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements);
     }
 
@@ -103,6 +122,28 @@ export function activate(context: vscode.ExtensionContext) {
       playerState = stateManager.loadPlayerState();
       refreshSidebar();
       vscode.window.showInformationMessage('Git Gud: Stats reset.');
+    }),
+    vscode.commands.registerCommand('gitgud.weeklyReport', () => {
+      showWeeklyReport(playerState, stateManager.getEventHistory());
+    }),
+    vscode.commands.registerCommand('gitgud.runDemo', async () => {
+      await runDemo(handleEvent);
+    }),
+    vscode.commands.registerCommand('gitgud.exportRankCard', async () => {
+      const svg = renderRankCardSvg(playerState, stateManager.getEventHistory());
+      const folder = vscode.workspace.workspaceFolders?.[0]?.uri ?? context.globalStorageUri;
+      const target = vscode.Uri.joinPath(folder, `git-gud-rank-card-${Date.now()}.svg`);
+      await vscode.workspace.fs.writeFile(target, Buffer.from(svg, 'utf8'));
+      const action = await vscode.window.showInformationMessage(
+        `🃏 Rank card saved: ${target.fsPath}`,
+        'Open',
+        'Share to X',
+      );
+      if (action === 'Open') {
+        await vscode.commands.executeCommand('vscode.open', target);
+      } else if (action === 'Share to X') {
+        await vscode.env.openExternal(vscode.Uri.parse(tweetIntentUrl(playerState)));
+      }
     }),
     vscode.commands.registerCommand('gitgud.setApiKey', async () => {
       const key = await vscode.window.showInputBox({ prompt: 'Enter API key', password: true });
