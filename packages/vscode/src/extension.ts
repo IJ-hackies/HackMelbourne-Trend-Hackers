@@ -157,6 +157,40 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage('Git Gud: API key saved.');
       }
     }),
+    vscode.commands.registerCommand('gitgud.shareToTeam', async () => {
+      const cfg = vscode.workspace.getConfiguration('gitgud');
+      let teamCode = cfg.get<string>('teamCode', '');
+      const syncUrl = cfg.get<string>('syncUrl', 'http://localhost:3000/api/sync');
+
+      if (!teamCode) {
+        const code = await vscode.window.showInputBox({ prompt: 'Enter your team code (or create one)' });
+        if (code) {
+          await cfg.update('teamCode', code, true);
+          teamCode = code;
+        } else {
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(syncUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            teamCode,
+            player: playerState,
+            timestamp: Date.now(),
+          }),
+        });
+        if (response.ok) {
+          vscode.window.showInformationMessage('Git Gud: Stats synced to team leaderboard!');
+        } else {
+          vscode.window.showWarningMessage('Git Gud: Failed to sync stats.');
+        }
+      } catch {
+        vscode.window.showWarningMessage('Git Gud: Could not connect to sync server.');
+      }
+    }),
   );
 }
 
