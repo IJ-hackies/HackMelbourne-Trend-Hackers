@@ -1,5 +1,5 @@
 import type { PlayerState } from '@git-gud/core';
-import { calculateSuffering, classifyPersonality } from '@git-gud/core';
+import { classifyPersonality } from '@git-gud/core';
 import type { StoredEvent } from '../storage/state-manager';
 
 const RANK_COLORS: Record<string, string> = {
@@ -34,7 +34,6 @@ function topCrimes(events: StoredEvent[]): string[] {
 
 export function renderRankCardSvg(playerState: PlayerState, eventHistory: StoredEvent[]): string {
   const stats = { ...playerState.stats, score: playerState.score.total };
-  const suffering = calculateSuffering(stats);
   const personality = classifyPersonality(stats);
   const rankColor = RANK_COLORS[playerState.rank.id] ?? '#c0c0c0';
   const crimes = topCrimes(eventHistory);
@@ -47,11 +46,6 @@ export function renderRankCardSvg(playerState: PlayerState, eventHistory: Stored
       <stop offset="0%" stop-color="#0f1419"/>
       <stop offset="100%" stop-color="#1e1b2e"/>
     </linearGradient>
-    <linearGradient id="suffer" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#00b894"/>
-      <stop offset="50%" stop-color="#fdcb6e"/>
-      <stop offset="100%" stop-color="#d63031"/>
-    </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect x="0" y="0" width="1200" height="8" fill="${rankColor}"/>
@@ -63,11 +57,6 @@ export function renderRankCardSvg(playerState: PlayerState, eventHistory: Stored
 
   <text x="60" y="320" font-family="Arial, sans-serif" font-size="20" fill="#a29bfe" font-weight="700" letter-spacing="2">PERSONALITY</text>
   <text x="60" y="360" font-family="Arial, sans-serif" font-size="34" fill="#ffffff" font-weight="700">${escapeXml(personality.type)}</text>
-
-  <text x="60" y="430" font-family="Arial, sans-serif" font-size="20" fill="#a29bfe" font-weight="700" letter-spacing="2">TEAMMATE SUFFERING</text>
-  <text x="60" y="470" font-family="Arial, sans-serif" font-size="32" fill="#ffffff" font-weight="700">${suffering.score}/100 — "${escapeXml(suffering.title)}"</text>
-  <rect x="60" y="490" width="540" height="14" fill="#2d2440" rx="7"/>
-  <rect x="60" y="490" width="${Math.max(0, Math.min(100, suffering.score)) * 5.4}" height="14" fill="url(#suffer)" rx="7"/>
 
   <text x="700" y="320" font-family="Arial, sans-serif" font-size="20" fill="#a29bfe" font-weight="700" letter-spacing="2">TOP GIT CRIMES</text>
   ${crimes

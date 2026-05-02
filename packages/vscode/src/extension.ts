@@ -11,8 +11,15 @@ import { getConfig, getRoastConfig, onConfigChange } from './config';
 import { runDemo } from './demo/demo-runner';
 import { renderRankCardSvg, tweetIntentUrl } from './rank-card/render';
 import { showWeeklyReport } from './reports/weekly-panel';
+import { SourceControlManager } from './git/source-control';
+import { generateCommitMessage } from './git/commit-message-ai';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
+const pexec = promisify(exec);
 let gitWatcher: GitWatcher | undefined;
+
+const COLLAPSED_KEY = 'gitgud.collapsedSections';
 
 export function activate(context: vscode.ExtensionContext) {
   let config = getConfig();
@@ -24,7 +31,15 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(SidebarProvider.viewId, sidebarProvider),
   );
 
+  const sourceControl = new SourceControlManager(() => refreshSidebar());
+  context.subscriptions.push({ dispose: () => sourceControl.dispose() });
+  void sourceControl.init();
+
   let conflictTracker: MergeConflictTracker | undefined;
+
+  function getCollapsed(): Record<string, boolean> {
+    return context.globalState.get<Record<string, boolean>>(COLLAPSED_KEY, {});
+  }
 
   function refreshSidebar() {
     const data = sidebarProvider.buildSidebarData(
@@ -36,10 +51,75 @@ export function activate(context: vscode.ExtensionContext) {
         ollamaModel: config.ollamaModel,
         ollamaBaseUrl: config.ollamaBaseUrl,
         geminiApiKey: config.geminiApiKey,
+        commitMessageStyle: config.commitMessageStyle,
       },
+      sourceControl.snapshot(),
+      getCollapsed(),
     );
     sidebarProvider.updateState(data);
   }
+
+  sidebarProvider.setHandlers({
+    onSCGenerate: async () => {
+      try {
+        const root = sourceControl.rootUri();
+        if (!root) throw new Error('No Git repository.');
+        const diff = await sourceControl.getDiff();
+        let porcelain = '';
+        try {
+          const { stdout } = await pexec('git status --porcelain', { cwd: root.fsPath, maxBuffer: 1024 * 256, timeout: 4000 });
+          porcelain = stdout.trim();
+        } catch {}
+        const message = await generateCommitMessage(config, {
+          diff,
+          porcelain,
+          style: config.commitMessageStyle,
+        });
+        sidebarProvider.postMessage({ type: 'sc:generated', message });
+      } catch (e: any) {
+        sidebarProvider.postMessage({ type: 'sc:generated', error: String(e?.message ?? e) });
+      }
+    },
+    onSCCommit: async (message, push, amend) => {
+      try {
+        await sourceControl.stageAllAndCommit(message, amend);
+        if (push) {
+          const res = await sourceControl.push();
+          if (!res.ok) {
+            sidebarProvider.postMessage({ type: 'sc:committed', needsPull: !!res.needsPull, error: res.error });
+            return;
+          }
+        }
+        sidebarProvider.postMessage({ type: 'sc:committed' });
+      } catch (e: any) {
+        sidebarProvider.postMessage({ type: 'sc:committed', error: String(e?.message ?? e) });
+      }
+    },
+    onSCPullAndPush: async () => {
+      const res = await sourceControl.pullAndPush();
+      if (!res.ok) {
+        sidebarProvider.postMessage({ type: 'sc:pushResult', error: res.error });
+        vscode.window.showErrorMessage(`Git Gud: pull & push failed — ${res.error}`);
+      } else {
+        sidebarProvider.postMessage({ type: 'sc:pushResult' });
+      }
+    },
+    onSCCheckout: async (branchFull, isRemote) => {
+      try {
+        const branches = sourceControl.snapshot().branches;
+        const target = branches.find(b => b.full === branchFull && b.isRemote === isRemote);
+        if (!target) throw new Error(`Branch not found: ${branchFull}`);
+        await sourceControl.checkout(target);
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`Git Gud: checkout failed — ${String(e?.message ?? e)}`);
+      }
+    },
+    onCollapsedChange: (key, collapsed) => {
+      const cur = getCollapsed();
+      cur[key] = collapsed;
+      void context.globalState.update(COLLAPSED_KEY, cur);
+    },
+  });
 
   refreshSidebar();
 
@@ -50,7 +130,6 @@ export function activate(context: vscode.ExtensionContext) {
   const handleEvent = async (event: GitEvent) => {
     if (!config.enabled) return;
 
-    // Enrich event with diff context
     try {
       if (event.type === 'commit' && event.repoPath) {
         Object.assign(event.metadata, await getCommitDiff(event.repoPath));
@@ -70,7 +149,6 @@ export function activate(context: vscode.ExtensionContext) {
       }
     } catch {}
 
-    // Build analysis context
     const branch = (event.metadata.branchName ?? event.metadata.branch) as string | undefined;
     const DEFAULT_BRANCHES = new Set(['main', 'master', 'develop', 'development', 'dev']);
     const analysisContext: AnalysisContext = {

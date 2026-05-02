@@ -34,7 +34,8 @@
         "gitgud.ollamaModel": { "type": "string", "default": "", "description": "Ollama model (default: kimi-k2.6:cloud)." },
         "gitgud.ollamaBaseUrl": { "type": "string", "default": "", "description": "Ollama API base URL." },
         "gitgud.geminiApiKey": { "type": "string", "default": "", "description": "Gemini API key." },
-        "gitgud.voiceEnabled": { "type": "boolean", "default": false, "description": "Speak savage roasts and rank-ups out loud (browser SpeechSynthesis)." }
+        "gitgud.voiceEnabled": { "type": "boolean", "default": false, "description": "Speak savage roasts and rank-ups out loud (browser SpeechSynthesis)." },
+        "gitgud.commitMessageStyle": { "type": "string", "default": "clean", "enum": ["clean", "savage"], "description": "Tone for AI-generated commit messages: clean (Conventional Commits) or savage (toxic-coach roast)." }
       }
     }
   },

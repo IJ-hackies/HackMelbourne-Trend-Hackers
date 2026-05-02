@@ -1,84 +1,74 @@
 ---
-
 name: reupdate
-
-description: Audits the project's actual state against the Context/ folder (ABOUT.md, PLAN.md) to detect direction mismatches — features that drifted, plans that diverged, or architecture that no longer matches the spec. Suggests concrete changes to realign.
-
+description: Updates the project's Context/ files (ABOUT.md, PLAN.md, and stage breakdowns if present) so they reflect the project's actual current state. Use when the user says "reupdate", "update the context", "sync the docs", "refresh the plan", or otherwise wants Context/ realigned to what the code now is. This skill WRITES changes — it is not a read-only audit. For a read-only audit, use `reaudit`.
 ---
 
-You are performing a direction audit of this project. Your job is to compare the project's **actual current state** against what the **Context/ files say it should be**, and surface any mismatches.
+You are updating the project's Context/ files so they match the project's actual current state. This skill **writes** changes; it is not an audit.
 
-## Step 1 — Load the source of truth
+## Step 1 — Load the current spec
 
-Read the Context/ files in this order:
-1. `Context/ABOUT.md` — the canonical architecture, hierarchy, data structures, features, and schemas.
-2. `Context/PLAN.md` — the staged roadmap, deliverables, and dependencies.
-3. Any `Context/STAGE*.md` files if they exist — detailed stage breakdowns.
+Read in this order:
+1. `Context/ABOUT.md` — canonical architecture, components, data shapes, features, configuration keys, decisions log.
+2. `Context/PLAN.md` — staged roadmap and what's shipped vs. deferred.
+3. Any `Context/Plans/STAGE*.md` files that exist — detailed stage breakdowns. Only read the ones that look stale or relevant; do not read every stage breakdown if there are many.
 
-Skip `Context/Diagrams/` — those are visual references only.
+Skip `Context/Diagrams/` and `Context/FUTURE.md`.
 
-Mentally index:
-- Every **component** described (packages, modules, services, etc.)
-- Every **data structure** and file path described (types, schemas, configs, etc.)
-- Every **feature** described (user-facing features, internal systems, etc.)
-- Every **script/module** described (entry points, utilities, build scripts, etc.)
-- The **directory structure** described for the project
-- The **stage ordering and dependencies** in PLAN.md
+Mentally index everything Context/ currently claims: components, modules, file paths, features, configuration keys, commands, decisions, stage status (✅ vs. pending), explicit out-of-scope decisions.
 
 ## Step 2 — Scan the actual project
 
-Use Glob and Read to examine the project's real state:
-- Scan all directories and files that exist in the project root (excluding `.git/`, `.claude/`, `Context/`)
-- Read key files: any Python scripts, JSON configs, schema files, AGENT.md files, identity files, pyproject.toml, etc.
-- Check what has actually been built vs. what ABOUT.md and PLAN.md say should exist
-- Note the git log (last ~15 commits) to understand recent development direction
+Examine the project's real state. Prefer broad-but-shallow over deep-but-narrow:
+- Top-level layout and each package/workspace's `src/` (or equivalent) tree.
+- Each package's `package.json` / `pyproject.toml` / equivalent — names, scripts, dependencies, and any contributed configuration (e.g. a VS Code extension's `contributes.configuration`, `contributes.commands`).
+- Entry points and command registrations.
+- `git log --oneline -15` to learn recent direction (recent feature names, removals, renames).
+- Any obvious top-level architectural artifacts (extension manifests, schema files, build configs).
 
-## Step 3 — Compare and identify mismatches
+You do not need to read every source file. The goal is "what does the project look like and claim now," not a code review.
 
-For each mismatch found, classify it as one of:
+## Step 3 — Compute the diff
 
-### Direction Drift
-The project has built something that **contradicts** or **diverges from** what ABOUT.md/PLAN.md describes. Example: a schema field exists in code but is missing from the spec, or vice versa.
+For every claim in Context/, decide:
+- **Still true** → leave alone.
+- **Stale** → Context/ describes something that no longer exists, was renamed, or was removed. Update or delete the line.
+- **Incomplete** → the project has shipped something Context/ doesn't mention. Add it.
+- **Wrong shape** → the description exists but the details (file paths, type names, config keys, stage status, decisions) are out of date. Fix the details.
 
-### Missing Implementation
-Something described in Context/ that **should exist by now** (based on stage progression) but doesn't.
+Pay special attention to:
+- **Configuration keys** — every contributed config key should appear in ABOUT.md's configuration section, and vice versa.
+- **Commands / entry points** — every registered command should be listed.
+- **UI surface order** if Context/ documents it (e.g. sidebar card order) — a reorder must be reflected.
+- **Removed features** — if something was deleted (file, type, feature, capability), Context/ should not still claim it. Add a Decisions-log entry explaining the removal if one isn't already there.
+- **Stage status flags** in PLAN.md — items that are now shipped should be in the "shipped" stage; items that drifted out of scope should be moved or marked deferred.
 
-### Undocumented Addition
-Something that **exists in the project** but is **not described** in any Context/ file — a feature, script, or structural choice that was added without updating the spec.
+## Step 4 — Write the updates
 
-### Stale Specification
-Something in Context/ that is **no longer accurate** — the project has intentionally moved past it, renamed it, or replaced it with a better approach.
+Edit `Context/ABOUT.md`, `Context/PLAN.md`, and any stage breakdown files that need it.
 
-## Step 4 — Report
+Style rules for the writes:
+- Match the existing voice and structure of each file. Do not restructure sections unless the existing structure is actively wrong.
+- Be concise. One line per fact where possible.
+- For removed features, prefer **adding a one-line entry to the Decisions log** in ABOUT.md ("X was removed because Y") over silently scrubbing all traces.
+- For new features, mirror the level of detail of neighboring features. Don't dump implementation notes into ABOUT.md — that file is the user-facing spec, not a changelog.
+- Stage breakdowns (`Context/Plans/STAGE*.md`) only need updating if substages have shifted. Don't rewrite a stage breakdown just because one bullet went stale — edit that bullet.
+- Never invent rationale. If you don't know *why* something changed, describe *what* changed and stop there.
 
-Present your findings in this format:
+## Step 5 — Report what changed
 
-### Audit Summary
-One paragraph: overall alignment health. Are things mostly on track, or has the project drifted significantly?
+After writing, give the user a short summary, structured as:
 
-### Mismatches Found
-
-For each mismatch:
-- **Type**: (Direction Drift / Missing Implementation / Undocumented Addition / Stale Specification)
-- **Location**: Where in the project and where in Context/
-- **What's wrong**: Concise description of the discrepancy
-- **Suggested fix**: Whether to update the Context/ files, update the code, or discuss with the user before deciding
-
-Group mismatches by severity:
-1. **Critical** — the project is actively building against outdated or wrong specs
-2. **Moderate** — noticeable divergence that should be resolved soon
-3. **Minor** — small inconsistencies or cosmetic differences
-
-### Recommendations
-Prioritized list of what to update. For each:
-- State whether the **code** or the **Context/ files** should change (or if it needs discussion)
-- If updating Context/, describe what specifically to change
-- If updating code, describe what to realign
+- **`Context/ABOUT.md`** — bullet list of edits (component renames, features added, config keys added/removed, decisions logged, etc.)
+- **`Context/PLAN.md`** — bullet list of edits (stage status changes, scope moves, etc.)
+- **Stage breakdowns** — only if any were touched.
+- **Left alone** — one sentence on anything you considered changing but decided was still accurate, so the user knows what was intentionally preserved.
+- **Needs your call** — only if applicable. Ambiguous cases where you didn't write a change because the right answer requires user input. Phrase as a direct question.
 
 ## Rules
 
-- Do NOT make any changes yourself. This is a read-only audit. Only report and suggest.
-- Do NOT guess about ambiguous cases. Flag them as "needs discussion" and explain the ambiguity.
-- Be specific. Reference exact file paths, line numbers, field names, and section headers.
-- Compare against what the Context/ files actually say, not what you think the project should do.
-- If the project is early-stage and most things are "missing implementation," focus on whether the things that DO exist match the spec, rather than listing every unbuilt stage.
+- This skill **writes** changes. It is not an audit.
+- For a read-only audit that only reports drift without editing, the user wants `reaudit` (code-quality focused) or to ask explicitly for an audit. Do **not** run an audit-only flow under this skill.
+- Do not change `Context/FUTURE.md` or `Context/Diagrams/`.
+- Do not introduce new top-level Context/ files.
+- Do not commit. The user reviews the diff.
+- If you are unsure whether something is an intentional choice or a drift, ask in the "Needs your call" section instead of guessing.
