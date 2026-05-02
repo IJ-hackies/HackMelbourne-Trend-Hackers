@@ -1,42 +1,48 @@
 import * as vscode from 'vscode';
 import type { Roast, RankEvaluation, Achievement } from '@git-gud/core';
 
-export function showRoastNotifications(
+const SEVERITY_RANK: Record<string, number> = { savage: 3, medium: 2, mild: 1 };
+
+function pickBestRoast(roasts: Roast[]): Roast | undefined {
+  if (roasts.length === 0) return undefined;
+  return roasts.reduce((best, r) =>
+    (SEVERITY_RANK[r.severity] ?? 0) > (SEVERITY_RANK[best.severity] ?? 0) ? r : best,
+  );
+}
+
+export async function showRoastNotifications(
   roasts: Roast[],
   rankEvaluation: RankEvaluation,
   newAchievements: Achievement[],
-): void {
-  for (const roast of roasts) {
-    const text = `${roast.message}\n💡 ${roast.advice}`;
-
+): Promise<void> {
+  const roast = pickBestRoast(roasts);
+  if (roast) {
+    let action: string | undefined;
     switch (roast.severity) {
       case 'savage':
-        vscode.window.showErrorMessage(`🔥 ${text}`);
+        action = await vscode.window.showErrorMessage(`🔥 ${roast.message}`, 'Show Advice');
         break;
       case 'medium':
-        vscode.window.showWarningMessage(`⚠️ ${text}`);
+        action = await vscode.window.showWarningMessage(`⚠️ ${roast.message}`, 'Show Advice');
         break;
       default:
-        vscode.window.showInformationMessage(`ℹ️ ${text}`);
+        action = await vscode.window.showInformationMessage(`ℹ️ ${roast.message}`, 'Show Advice');
         break;
+    }
+    if (action === 'Show Advice') {
+      vscode.window.showInformationMessage(`💡 ${roast.advice}`);
     }
   }
 
   if (rankEvaluation.promoted) {
-    vscode.window.showInformationMessage(
-      `🏆 RANK UP! You are now ${rankEvaluation.rank.name}!`,
-    );
+    vscode.window.showInformationMessage(`🏆 RANK UP! You are now ${rankEvaluation.rank.name}!`);
   } else if (rankEvaluation.demoted && rankEvaluation.previousRank) {
-    vscode.window.showWarningMessage(
-      `📉 Demoted from ${rankEvaluation.previousRank.name} to ${rankEvaluation.rank.name}. Do better.`,
-    );
+    vscode.window.showWarningMessage(`📉 Demoted from ${rankEvaluation.previousRank.name} to ${rankEvaluation.rank.name}. Do better.`);
   }
 
   for (const achievement of newAchievements) {
     if (achievement.unlocked) {
-      vscode.window.showInformationMessage(
-        `🎖️ Achievement Unlocked: ${achievement.name} — ${achievement.description}`,
-      );
+      vscode.window.showInformationMessage(`🎖️ Achievement Unlocked: ${achievement.name} — ${achievement.description}`);
     }
   }
 }

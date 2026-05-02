@@ -1,38 +1,41 @@
 import * as vscode from 'vscode';
 import type { RoastConfig } from '@git-gud/core';
 
-export type RoastIntensity = 'mild' | 'medium' | 'savage';
-
 export interface GitGudConfig {
   enabled: boolean;
-  notificationsEnabled: boolean;
-  soundEnabled: boolean;
-  roastIntensity: RoastIntensity;
+  aiProvider: 'ollama' | 'gemini';
   ollamaApiKey: string;
   ollamaModel: string;
   ollamaBaseUrl: string;
+  geminiApiKey: string;
 }
 
 export function getConfig(): GitGudConfig {
   const c = vscode.workspace.getConfiguration('gitgud');
   return {
     enabled: c.get<boolean>('enabled', true),
-    notificationsEnabled: c.get<boolean>('notificationsEnabled', true),
-    soundEnabled: c.get<boolean>('soundEnabled', true),
-    roastIntensity: c.get<RoastIntensity>('roastIntensity', 'medium'),
+    aiProvider: c.get<'ollama' | 'gemini'>('aiProvider', 'ollama'),
     ollamaApiKey: c.get<string>('ollamaApiKey', ''),
     ollamaModel: c.get<string>('ollamaModel', ''),
     ollamaBaseUrl: c.get<string>('ollamaBaseUrl', ''),
+    geminiApiKey: c.get<string>('geminiApiKey', ''),
   };
 }
 
 export function getRoastConfig(config: GitGudConfig): RoastConfig | undefined {
-  if (!config.ollamaApiKey) return undefined;
-  return {
-    ollamaApiKey: config.ollamaApiKey,
-    ollamaModel: config.ollamaModel || undefined,
-    ollamaBaseUrl: config.ollamaBaseUrl || undefined,
-  };
+  if (config.aiProvider === 'gemini' && config.geminiApiKey) {
+    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey } };
+  }
+  if (config.ollamaApiKey) {
+    return {
+      provider: config.aiProvider,
+      ollama: { apiKey: config.ollamaApiKey, model: config.ollamaModel || undefined, baseUrl: config.ollamaBaseUrl || undefined },
+    };
+  }
+  if (config.geminiApiKey) {
+    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey } };
+  }
+  return undefined;
 }
 
 export function onConfigChange(callback: (config: GitGudConfig) => void): vscode.Disposable {

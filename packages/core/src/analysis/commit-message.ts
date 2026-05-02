@@ -16,7 +16,7 @@ const DEFAULT_MESSAGES = new Set([
   'create readme.md',
 ]);
 
-const EMOJI_ONLY_RE = /^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}️‍]+$/u;
+const EMOJI_ONLY_RE = /^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}\u{FE0F}\u{200D}]+$/u;
 
 function verdict(
   severity: Severity,

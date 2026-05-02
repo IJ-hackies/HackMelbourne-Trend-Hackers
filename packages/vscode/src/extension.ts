@@ -1,21 +1,18 @@
 import * as vscode from 'vscode';
 import { evaluate } from '@git-gud/core';
-import { GitEventDetector } from './git/event-detector';
-import { mapToGitEvent, buildAnalysisContext } from './git/event-mapper';
+import type { GitEvent, AnalysisContext } from '@git-gud/core';
+import { GitWatcher } from './git/git-watcher';
+import { getCommitDiff, getPushDiff, getMergeConflictFiles } from './git/git-commands';
 import { showRoastNotifications } from './notifications/roast-notifier';
 import { StateManager } from './storage/state-manager';
 import { SidebarProvider } from './webview/sidebar-provider';
-import { SoundPlayer } from './audio/sound-player';
+import { MergeConflictTracker } from './git/merge-conflict-tracker';
 import { getConfig, getRoastConfig, onConfigChange } from './config';
-import type { GitGudConfig } from './config';
 
-const outputChannel = vscode.window.createOutputChannel('Git Gud');
+let gitWatcher: GitWatcher | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
-  outputChannel.appendLine('Git Gud is now active — watching your every move.');
-
   let config = getConfig();
-
   const stateManager = new StateManager(context.globalState);
   let playerState = stateManager.loadPlayerState();
 
@@ -24,15 +21,19 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(SidebarProvider.viewId, sidebarProvider),
   );
 
-  const soundPlayer = new SoundPlayer(sidebarProvider);
-  soundPlayer.enabled = config.soundEnabled;
+  let conflictTracker: MergeConflictTracker | undefined;
 
   function refreshSidebar() {
     const data = sidebarProvider.buildSidebarData(
       playerState,
       stateManager.getEventHistory(),
-      config.soundEnabled,
-      { apiKey: config.ollamaApiKey, model: config.ollamaModel, baseUrl: config.ollamaBaseUrl },
+      {
+        aiProvider: config.aiProvider,
+        ollamaApiKey: config.ollamaApiKey,
+        ollamaModel: config.ollamaModel,
+        ollamaBaseUrl: config.ollamaBaseUrl,
+        geminiApiKey: config.geminiApiKey,
+      },
     );
     sidebarProvider.updateState(data);
   }
@@ -40,119 +41,84 @@ export function activate(context: vscode.ExtensionContext) {
   refreshSidebar();
 
   context.subscriptions.push(
-    onConfigChange((newConfig) => {
-      config = newConfig;
-      soundPlayer.enabled = config.soundEnabled;
-      refreshSidebar();
-    }),
+    onConfigChange((newConfig) => { config = newConfig; refreshSidebar(); }),
   );
 
-  const detector = new GitEventDetector();
-  context.subscriptions.push(detector);
-
-  detector.initialize().then((ok) => {
-    if (ok) {
-      outputChannel.appendLine('Git repository detected. Event monitoring active.');
-    } else {
-      outputChannel.appendLine('No git repository found. Open a git project to get roasted.');
-    }
-  });
-
-  detector.onEvent(async (signal) => {
-    outputChannel.appendLine(`[${signal.type}] Event detected from ${signal.source}`);
-
+  const handleEvent = async (event: GitEvent) => {
     if (!config.enabled) return;
 
-    const gitEvent = mapToGitEvent(signal);
-    const recentDates = stateManager.getRecentCommitDates();
-    const analysisContext = buildAnalysisContext(signal, recentDates);
-    const roastConfig = getRoastConfig(config);
-
+    // Enrich event with diff context
     try {
-      const result = await evaluate(gitEvent, playerState, analysisContext, roastConfig);
-
-      outputChannel.appendLine(`  Score: ${result.score.total} (${result.score.delta >= 0 ? '+' : ''}${result.score.delta})`);
-      outputChannel.appendLine(`  Rank: ${result.rankEvaluation.rank.name}`);
-      outputChannel.appendLine(`  Verdicts: ${result.analysis.verdicts.length}`);
-      outputChannel.appendLine(`  Roasts: ${result.roasts.length}`);
-
-      const newAchievements = result.achievements.filter(
-        a => a.unlocked && !playerState.unlockedAchievements.has(a.id),
-      );
-
-      if (config.notificationsEnabled) {
-        showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements);
+      if (event.type === 'commit' && event.repoPath) {
+        Object.assign(event.metadata, await getCommitDiff(event.repoPath));
+      } else if ((event.type === 'push-to-main' || event.type === 'force-push') && event.repoPath) {
+        Object.assign(event.metadata, await getPushDiff(event.repoPath, (event.metadata.branchName as string) ?? 'main'));
+      } else if (event.type === 'merge-conflict' && event.repoPath) {
+        Object.assign(event.metadata, await getMergeConflictFiles(event.repoPath));
+        if (!conflictTracker) {
+          conflictTracker = new MergeConflictTracker(event.repoPath, async (type, metadata) => {
+            await handleEvent({ type, timestamp: Date.now(), repoPath: event.repoPath, metadata });
+          });
+          await conflictTracker.start((event.metadata.changedFiles as string[]) ?? []);
+        }
+      } else if (event.type === 'merge-conflict-resolved') {
+        conflictTracker?.stop();
+        conflictTracker = undefined;
       }
+    } catch {}
 
-      if (config.soundEnabled) {
-        soundPlayer.playSoundsForResult(result.roasts, result.rankEvaluation, newAchievements);
-      }
+    // Build analysis context
+    const branch = (event.metadata.branchName ?? event.metadata.branch) as string | undefined;
+    const DEFAULT_BRANCHES = new Set(['main', 'master', 'develop', 'development', 'dev']);
+    const analysisContext: AnalysisContext = {
+      branchName: branch,
+      isDefaultBranch: branch ? DEFAULT_BRANCHES.has(branch.toLowerCase()) : false,
+      recentCommitTimestamps: stateManager.getRecentCommitDates(),
+    };
 
-      playerState = await stateManager.saveAfterEvaluation(gitEvent, result, playerState);
-      refreshSidebar();
-    } catch (err) {
-      outputChannel.appendLine(`  Error during evaluation: ${err}`);
+    const roastConfig = getRoastConfig(config);
+    const result = await evaluate(event, playerState, analysisContext, roastConfig);
+
+    playerState = await stateManager.saveAfterEvaluation(event, result, playerState);
+
+    const newAchievements = result.achievements.filter(
+      a => a.unlocked && !playerState.unlockedAchievements.has(a.id),
+    );
+
+    const SILENT = new Set(['conflict-block-preview', 'file-fully-resolved']);
+    if (!SILENT.has(event.type)) {
+      await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements);
     }
-  });
+
+    refreshSidebar();
+  };
+
+  gitWatcher = new GitWatcher(handleEvent);
+  gitWatcher.start();
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('gitgud.showStatus', () => {
-      vscode.window.showInformationMessage(
-        `Git Gud | Rank: ${playerState.rank.name} | Score: ${playerState.score.total} | Commits: ${playerState.stats.totalCommits}`,
-      );
-    }),
-  );
-
-  context.subscriptions.push(
+    vscode.commands.registerCommand('gitgud.showDashboard', () => sidebarProvider.focus()),
     vscode.commands.registerCommand('gitgud.resetStats', async () => {
-      const confirm = await vscode.window.showWarningMessage(
-        'Reset all Git Gud stats? This cannot be undone.',
-        { modal: true },
-        'Reset',
-      );
-      if (confirm === 'Reset') {
-        await stateManager.resetState();
-        playerState = stateManager.loadPlayerState();
-        refreshSidebar();
-        vscode.window.showInformationMessage('Git Gud stats reset. Fresh start, same bad habits.');
-        outputChannel.appendLine('Stats reset by user.');
+      await stateManager.resetState();
+      playerState = stateManager.loadPlayerState();
+      refreshSidebar();
+      vscode.window.showInformationMessage('Git Gud: Stats reset.');
+    }),
+    vscode.commands.registerCommand('gitgud.setApiKey', async () => {
+      const key = await vscode.window.showInputBox({ prompt: 'Enter API key', password: true });
+      if (key) {
+        const cfg = vscode.workspace.getConfiguration('gitgud');
+        if (config.aiProvider === 'gemini') {
+          await cfg.update('geminiApiKey', key, true);
+        } else {
+          await cfg.update('ollamaApiKey', key, true);
+        }
+        vscode.window.showInformationMessage('Git Gud: API key saved.');
       }
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('gitgud.showProfile', () => {
-      const stats = playerState.stats;
-      const lines = [
-        `\u{1F3C5} Rank: ${playerState.rank.name}`,
-        `\u{1F4CA} Score: ${playerState.score.total}`,
-        `\u{1F4DD} Commits: ${stats.totalCommits}`,
-        `\u{1F525} Force Pushes: ${stats.totalForcePushes}`,
-        `\u{1F500} Merge Conflicts: ${stats.totalMergeConflicts}`,
-        `\u{1F3C6} Clean Streak: ${stats.cleanCommitStreak} (Best: ${stats.longestCleanStreak})`,
-        `\u{1F396}\u{FE0F} Achievements: ${playerState.unlockedAchievements.size}`,
-      ];
-      outputChannel.appendLine('\n--- Player Profile ---');
-      for (const line of lines) outputChannel.appendLine(line);
-      outputChannel.show(true);
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('gitgud.showDashboard', () => {
-      sidebarProvider.focus();
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('gitgud.toggleSound', () => {
-      const current = config.soundEnabled;
-      vscode.workspace.getConfiguration('gitgud').update('soundEnabled', !current, true);
-      vscode.window.showInformationMessage(
-        current ? 'Git Gud sound effects disabled.' : 'Git Gud sound effects enabled.',
-      );
     }),
   );
 }
 
-export function deactivate() {}
+export function deactivate() {
+  gitWatcher?.dispose();
+}

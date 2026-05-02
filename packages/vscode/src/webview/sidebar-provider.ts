@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { RANK_LADDER, ACHIEVEMENTS, checkAchievements, calculateSuffering, classifyPersonality } from '@git-gud/core';
+import { RANK_LADDER, checkAchievements, calculateSuffering, classifyPersonality } from '@git-gud/core';
 import type { PlayerState } from '@git-gud/core';
 import type { StoredEvent } from '../storage/state-manager';
 
@@ -24,9 +24,11 @@ export interface SidebarData {
     totalBranchSwitches: number;
   };
   soundEnabled: boolean;
+  aiProvider: 'ollama' | 'gemini';
   ollamaApiKey: string;
   ollamaModel: string;
   ollamaBaseUrl: string;
+  geminiApiKey: string;
 }
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
@@ -56,9 +58,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         this._postState(this._pendingData);
       } else if (msg.type === 'saveSettings') {
         const cfg = vscode.workspace.getConfiguration('gitgud');
+        cfg.update('aiProvider', msg.aiProvider || 'ollama', true);
         cfg.update('ollamaApiKey', msg.ollamaApiKey || '', true);
         cfg.update('ollamaModel', msg.ollamaModel || '', true);
         cfg.update('ollamaBaseUrl', msg.ollamaBaseUrl || '', true);
+        cfg.update('geminiApiKey', msg.geminiApiKey || '', true);
       }
     });
   }
@@ -66,23 +70,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   buildSidebarData(
     playerState: PlayerState,
     eventHistory: StoredEvent[],
-    soundEnabled: boolean,
-    ollamaConfig?: { apiKey: string; model: string; baseUrl: string },
+    configFields: { aiProvider: 'ollama' | 'gemini'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string },
   ): SidebarData {
     const rankIdx = RANK_LADDER.findIndex(r => r.id === playerState.rank.id);
     const nextRank = rankIdx < RANK_LADDER.length - 1 ? RANK_LADDER[rankIdx + 1] : null;
 
     const statsWithScore = { ...playerState.stats, score: playerState.score.total };
-    const achievements = ACHIEVEMENTS.map(def => {
-      const result = def.condition(statsWithScore);
-      return {
-        id: def.id,
-        name: def.name,
-        description: def.description,
-        unlocked: playerState.unlockedAchievements.has(def.id) || result.unlocked,
-        progress: result.progress,
-      };
-    });
+    const achievements = checkAchievements(statsWithScore, playerState.unlockedAchievements);
 
     const suffering = calculateSuffering(statsWithScore);
     const personality = classifyPersonality(statsWithScore);
@@ -107,10 +101,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         commitsInCurrentSession: playerState.stats.commitsInCurrentSession,
         totalBranchSwitches: playerState.stats.totalBranchSwitches,
       },
-      soundEnabled,
-      ollamaApiKey: ollamaConfig?.apiKey ?? '',
-      ollamaModel: ollamaConfig?.model ?? '',
-      ollamaBaseUrl: ollamaConfig?.baseUrl ?? '',
+      soundEnabled: true,
+      aiProvider: configFields.aiProvider,
+      ollamaApiKey: configFields.ollamaApiKey,
+      ollamaModel: configFields.ollamaModel,
+      ollamaBaseUrl: configFields.ollamaBaseUrl,
+      geminiApiKey: configFields.geminiApiKey,
     };
   }
 
@@ -412,7 +408,7 @@ body {
   margin-bottom: 3px;
   color: var(--vscode-descriptionForeground);
 }
-.settings-input {
+.settings-input, .settings-select {
   width: 100%;
   padding: 4px 6px;
   font-size: 12px;
@@ -423,7 +419,7 @@ body {
   border-radius: 3px;
   outline: none;
 }
-.settings-input:focus {
+.settings-input:focus, .settings-select:focus {
   border-color: var(--vscode-focusBorder, var(--accent));
 }
 .settings-hint {
@@ -646,21 +642,37 @@ body {
     html += '</div>';
     html += '<div class="settings-body" id="settings-body">';
 
+    // Provider selector
     html += '<div class="settings-field">';
-    html += '<label class="settings-label">API Key</label>';
-    html += '<input class="settings-input" type="password" id="cfg-apikey" value="' + esc(d.ollamaApiKey) + '" placeholder="Enter API key..." />';
+    html += '<label class="settings-label">AI Provider</label>';
+    html += '<select class="settings-select" id="cfg-provider">';
+    html += '<option value="ollama"' + (d.aiProvider === 'ollama' ? ' selected' : '') + '>Ollama</option>';
+    html += '<option value="gemini"' + (d.aiProvider === 'gemini' ? ' selected' : '') + '>Gemini</option>';
+    html += '</select>';
+    html += '</div>';
+
+    // Ollama fields
+    html += '<div class="settings-field">';
+    html += '<label class="settings-label">Ollama API Key</label>';
+    html += '<input class="settings-input" type="password" id="cfg-apikey" value="' + esc(d.ollamaApiKey) + '" placeholder="Enter Ollama API key..." />';
     html += '</div>';
 
     html += '<div class="settings-field">';
-    html += '<label class="settings-label">Model</label>';
+    html += '<label class="settings-label">Ollama Model</label>';
     html += '<input class="settings-input" type="text" id="cfg-model" value="' + esc(d.ollamaModel) + '" placeholder="kimi-k2.6:cloud" />';
     html += '<div class="settings-hint">Leave blank for default</div>';
     html += '</div>';
 
     html += '<div class="settings-field">';
-    html += '<label class="settings-label">Base URL</label>';
+    html += '<label class="settings-label">Ollama Base URL</label>';
     html += '<input class="settings-input" type="text" id="cfg-baseurl" value="' + esc(d.ollamaBaseUrl) + '" placeholder="https://ollama.com/v1" />';
     html += '<div class="settings-hint">Leave blank for default</div>';
+    html += '</div>';
+
+    // Gemini field
+    html += '<div class="settings-field">';
+    html += '<label class="settings-label">Gemini API Key</label>';
+    html += '<input class="settings-input" type="password" id="cfg-gemini-key" value="' + esc(d.geminiApiKey) + '" placeholder="Enter Gemini API key..." />';
     html += '</div>';
 
     html += '<div style="display:flex;align-items:center">';
@@ -668,9 +680,9 @@ body {
     html += '<span class="settings-saved" id="settings-saved">Saved!</span>';
     html += '</div>';
 
-    const hasKey = d.ollamaApiKey && d.ollamaApiKey.length > 0;
+    const hasKey = (d.aiProvider === 'gemini' && d.geminiApiKey.length > 0) || (d.aiProvider === 'ollama' && d.ollamaApiKey.length > 0);
     html += '<div class="settings-status ' + (hasKey ? 'connected' : 'disconnected') + '">';
-    html += hasKey ? '\\u{2705} AI roasts enabled' : '\\u{26A0}\\u{FE0F} No API key — using template roasts';
+    html += hasKey ? '\\u{2705} AI roasts enabled (' + esc(d.aiProvider) + ')' : '\\u{26A0}\\u{FE0F} No API key — using template roasts';
     html += '</div>';
 
     html += '</div>';
@@ -691,10 +703,12 @@ body {
     var saveBtn = document.getElementById('settings-save');
     if (saveBtn) {
       saveBtn.addEventListener('click', function() {
+        var provider = document.getElementById('cfg-provider').value;
         var apikey = document.getElementById('cfg-apikey').value;
         var model = document.getElementById('cfg-model').value;
         var baseurl = document.getElementById('cfg-baseurl').value;
-        vscode.postMessage({ type: 'saveSettings', ollamaApiKey: apikey, ollamaModel: model, ollamaBaseUrl: baseurl });
+        var geminiKey = document.getElementById('cfg-gemini-key').value;
+        vscode.postMessage({ type: 'saveSettings', aiProvider: provider, ollamaApiKey: apikey, ollamaModel: model, ollamaBaseUrl: baseurl, geminiApiKey: geminiKey });
         var saved = document.getElementById('settings-saved');
         if (saved) { saved.classList.add('show'); setTimeout(function() { saved.classList.remove('show'); }, 2000); }
       });
