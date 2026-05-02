@@ -75,7 +75,7 @@ Sound effects come last because they're optional and depend on the notification 
 
 ---
 
-## Stage 4.4 — Sidebar Webview Dashboard
+## Stage 4.4 — Sidebar Webview Dashboard ✅ COMPLETE
 
 **Goal:** Build a rich sidebar panel showing the developer's rank, score, recent offenses, streaks, and achievements.
 
@@ -100,7 +100,7 @@ Sound effects come last because they're optional and depend on the notification 
 
 ---
 
-## Stage 4.5 — Commands & Configuration (partially complete)
+## Stage 4.5 — Commands & Configuration ✅ COMPLETE
 
 **Goal:** Register remaining user-facing commands and settings not already covered by 4.2/4.3.
 
@@ -124,7 +124,7 @@ Sound effects come last because they're optional and depend on the notification 
 
 ---
 
-## Stage 4.6 — Sound Effects
+## Stage 4.6 — Sound Effects ✅ COMPLETE
 
 **Goal:** Add esports-style audio cues on git events for maximum drama. Optional and toggleable.
 

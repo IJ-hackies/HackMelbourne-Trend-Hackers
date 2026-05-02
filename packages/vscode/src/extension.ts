@@ -1,18 +1,50 @@
 import * as vscode from 'vscode';
-import { evaluate, RANK_LADDER } from '@git-gud/core';
-import type { RoastConfig } from '@git-gud/core';
+import { evaluate } from '@git-gud/core';
 import { GitEventDetector } from './git/event-detector';
 import { mapToGitEvent, buildAnalysisContext } from './git/event-mapper';
 import { showRoastNotifications } from './notifications/roast-notifier';
 import { StateManager } from './storage/state-manager';
+import { SidebarProvider } from './webview/sidebar-provider';
+import { SoundPlayer } from './audio/sound-player';
+import { getConfig, getRoastConfig, onConfigChange } from './config';
+import type { GitGudConfig } from './config';
 
 const outputChannel = vscode.window.createOutputChannel('Git Gud');
 
 export function activate(context: vscode.ExtensionContext) {
   outputChannel.appendLine('Git Gud is now active — watching your every move.');
 
+  let config = getConfig();
+
   const stateManager = new StateManager(context.globalState);
   let playerState = stateManager.loadPlayerState();
+
+  const sidebarProvider = new SidebarProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(SidebarProvider.viewId, sidebarProvider),
+  );
+
+  const soundPlayer = new SoundPlayer(sidebarProvider);
+  soundPlayer.enabled = config.soundEnabled;
+
+  function refreshSidebar() {
+    const data = sidebarProvider.buildSidebarData(
+      playerState,
+      stateManager.getEventHistory(),
+      config.soundEnabled,
+    );
+    sidebarProvider.updateState(data);
+  }
+
+  refreshSidebar();
+
+  context.subscriptions.push(
+    onConfigChange((newConfig) => {
+      config = newConfig;
+      soundPlayer.enabled = config.soundEnabled;
+      refreshSidebar();
+    }),
+  );
 
   const detector = new GitEventDetector();
   context.subscriptions.push(detector);
@@ -28,14 +60,12 @@ export function activate(context: vscode.ExtensionContext) {
   detector.onEvent(async (signal) => {
     outputChannel.appendLine(`[${signal.type}] Event detected from ${signal.source}`);
 
-    const config = vscode.workspace.getConfiguration('gitgud');
-    if (!config.get<boolean>('enabled', true)) return;
+    if (!config.enabled) return;
 
     const gitEvent = mapToGitEvent(signal);
     const recentDates = stateManager.getRecentCommitDates();
     const analysisContext = buildAnalysisContext(signal, recentDates);
-
-    const roastConfig = buildRoastConfig(config);
+    const roastConfig = getRoastConfig(config);
 
     try {
       const result = await evaluate(gitEvent, playerState, analysisContext, roastConfig);
@@ -49,11 +79,16 @@ export function activate(context: vscode.ExtensionContext) {
         a => a.unlocked && !playerState.unlockedAchievements.has(a.id),
       );
 
-      if (config.get<boolean>('notificationsEnabled', true)) {
+      if (config.notificationsEnabled) {
         showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements);
       }
 
+      if (config.soundEnabled) {
+        soundPlayer.playSoundsForResult(result.roasts, result.rankEvaluation, newAchievements);
+      }
+
       playerState = await stateManager.saveAfterEvaluation(gitEvent, result, playerState);
+      refreshSidebar();
     } catch (err) {
       outputChannel.appendLine(`  Error during evaluation: ${err}`);
     }
@@ -61,10 +96,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('gitgud.showStatus', () => {
-      const rank = playerState.rank;
-      const score = playerState.score;
       vscode.window.showInformationMessage(
-        `Git Gud | Rank: ${rank.name} | Score: ${score.total} | Commits: ${playerState.stats.totalCommits}`,
+        `Git Gud | Rank: ${playerState.rank.name} | Score: ${playerState.score.total} | Commits: ${playerState.stats.totalCommits}`,
       );
     }),
   );
@@ -79,6 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (confirm === 'Reset') {
         await stateManager.resetState();
         playerState = stateManager.loadPlayerState();
+        refreshSidebar();
         vscode.window.showInformationMessage('Git Gud stats reset. Fresh start, same bad habits.');
         outputChannel.appendLine('Stats reset by user.');
       }
@@ -89,30 +123,35 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('gitgud.showProfile', () => {
       const stats = playerState.stats;
       const lines = [
-        `🏅 Rank: ${playerState.rank.name}`,
-        `📊 Score: ${playerState.score.total}`,
-        `📝 Commits: ${stats.totalCommits}`,
-        `🔥 Force Pushes: ${stats.totalForcePushes}`,
-        `🔀 Merge Conflicts: ${stats.totalMergeConflicts}`,
-        `🏆 Clean Streak: ${stats.cleanCommitStreak} (Best: ${stats.longestCleanStreak})`,
-        `🎖️ Achievements: ${playerState.unlockedAchievements.size}`,
+        `\u{1F3C5} Rank: ${playerState.rank.name}`,
+        `\u{1F4CA} Score: ${playerState.score.total}`,
+        `\u{1F4DD} Commits: ${stats.totalCommits}`,
+        `\u{1F525} Force Pushes: ${stats.totalForcePushes}`,
+        `\u{1F500} Merge Conflicts: ${stats.totalMergeConflicts}`,
+        `\u{1F3C6} Clean Streak: ${stats.cleanCommitStreak} (Best: ${stats.longestCleanStreak})`,
+        `\u{1F396}\u{FE0F} Achievements: ${playerState.unlockedAchievements.size}`,
       ];
       outputChannel.appendLine('\n--- Player Profile ---');
       for (const line of lines) outputChannel.appendLine(line);
       outputChannel.show(true);
     }),
   );
-}
 
-function buildRoastConfig(config: vscode.WorkspaceConfiguration): RoastConfig | undefined {
-  const apiKey = config.get<string>('ollamaApiKey', '');
-  if (!apiKey) return undefined;
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitgud.showDashboard', () => {
+      sidebarProvider.focus();
+    }),
+  );
 
-  return {
-    ollamaApiKey: apiKey,
-    ollamaModel: config.get<string>('ollamaModel') || undefined,
-    ollamaBaseUrl: config.get<string>('ollamaBaseUrl') || undefined,
-  };
+  context.subscriptions.push(
+    vscode.commands.registerCommand('gitgud.toggleSound', () => {
+      const current = config.soundEnabled;
+      vscode.workspace.getConfiguration('gitgud').update('soundEnabled', !current, true);
+      vscode.window.showInformationMessage(
+        current ? 'Git Gud sound effects disabled.' : 'Git Gud sound effects enabled.',
+      );
+    }),
+  );
 }
 
 export function deactivate() {}

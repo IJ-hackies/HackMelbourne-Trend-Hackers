@@ -9,6 +9,24 @@
   "main": "dist/extension.js",
   "activationEvents": ["onStartupFinished"],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gitgud",
+          "title": "Git Gud",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "gitgud": [
+        {
+          "type": "webview",
+          "id": "gitgud.sidebar",
+          "name": "Dashboard"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "gitgud.showStatus",
@@ -21,6 +39,14 @@
       {
         "command": "gitgud.showProfile",
         "title": "Git Gud: Show Profile"
+      },
+      {
+        "command": "gitgud.showDashboard",
+        "title": "Git Gud: Show Dashboard"
+      },
+      {
+        "command": "gitgud.toggleSound",
+        "title": "Git Gud: Toggle Sound Effects"
       }
     ],
     "configuration": {
@@ -35,6 +61,22 @@
           "type": "boolean",
           "default": true,
           "description": "Show notification popups when git events are detected."
+        },
+        "gitgud.soundEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play esports-style sound effects on git events (requires sidebar open)."
+        },
+        "gitgud.roastIntensity": {
+          "type": "string",
+          "default": "medium",
+          "enum": ["mild", "medium", "savage"],
+          "enumDescriptions": [
+            "Gentle nudges — still helpful, less flame",
+            "Balanced roasting — the default competitive experience",
+            "Maximum toxicity — for those who thrive on chaos"
+          ],
+          "description": "Controls the intensity of roast notifications."
         },
         "gitgud.ollamaApiKey": {
           "type": "string",

@@ -39,7 +39,7 @@ Build the personality layer and progression systems on top of the analysis engin
 - ✅ Developer personality classifier — 7 archetypes (Commit Goblin, Chaos Mage, README Avoider, Monolith Merchant, Branch Hoarder, The Perfectionist, Night Crawler)
 - ✅ Unified async `evaluate()` pipeline — single entry point returning `Promise<EvaluationResult>`, accepts optional `RoastConfig`
 
-## Stage 4 — VS Code Extension MVP
+## Stage 4 — VS Code Extension MVP ✅ COMPLETE
 
 Wire core into a working VS Code extension that reacts to real git activity.
 
@@ -48,10 +48,10 @@ Wire core into a working VS Code extension that reacts to real git activity.
 - ✅ File system watchers on `.git/` for events the API doesn't surface (rebase, merge conflicts via `MERGE_HEAD`)
 - ✅ Notification popups — roast + advice on each detected event, severity-based routing (info/warning/error)
 - ✅ Local persistence — user stats stored in VS Code globalState with schema versioning and migration support
-- ✅ Commands (`gitgud.showStatus`, `gitgud.resetStats`, `gitgud.showProfile`) and settings (`enabled`, `notificationsEnabled`, Ollama API config)
-- Sidebar webview dashboard — current rank, score, recent offenses, active streaks, achievements
-- Sound effects — esports-style audio cues on events (optional toggle)
-- Remaining commands (`gitgud.showDashboard`, `gitgud.toggleSound`) and settings (`soundEnabled`, `roastIntensity`)
+- ✅ Commands (`gitgud.showStatus`, `gitgud.resetStats`, `gitgud.showProfile`, `gitgud.showDashboard`, `gitgud.toggleSound`) and settings (`enabled`, `notificationsEnabled`, `soundEnabled`, `roastIntensity`, Ollama API config)
+- ✅ Sidebar webview dashboard — current rank, score, recent offenses, active streaks, achievements, personality, teammate suffering
+- ✅ Sound effects — esports-style Web Audio API synthesis (rank up/down, achievement fanfare, critical alert, event blip) with optional toggle
+- ✅ Centralized config reader (`config.ts`) with `onDidChangeConfiguration` listener
 
 ## Stage 5 — Website MVP
 
