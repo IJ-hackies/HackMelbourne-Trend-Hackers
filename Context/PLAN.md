@@ -17,6 +17,9 @@ Features that turn the extension into a demoable, shareable, social-media-friend
 - **Sidebar Actions card** — primary surface for all new commands
 - **In-sidebar Source Control card** — branch picker, AI-generated 1-line commit messages (`clean` / `savage` style toggle), split Commit / Commit & Push / Amend button, live changes list via `vscode.git` API
 - **Sidebar UX pass** — collapsible cards (all except Rank + Personality) with persisted state, animated expand/collapse, redesigned Stats list, removal of the Suffering Index
+- **Roast intensity setting** (`roastIntensity`) — mild/medium/savage severity adjustment
+- **Team sync** — `gitgud.shareToTeam` command + web package leaderboard/sync API routes
+- **Parallel roast generation** — individual and combined roasts generated concurrently
 
 ## Stage 3 — Polish & distribution
 
@@ -30,10 +33,6 @@ Post-hackathon, only if the project continues:
 
 Originally planned as Stage 2; deprioritized for the hackathon. Surface clear errors when providers are unreachable, cache repeated roast prompts, let users pick a model from the sidebar without editing JSON.
 
-## Stage 5 — Web companion (deferred)
+## Stage 5 — Web companion (partially started)
 
-`packages/web` is currently a Next.js stub. Decide its purpose (landing page? shareable rank cards via URL? team leaderboard?) and build the first version.
-
-## Stage 6 — Stretch
-
-Multiplayer / team features: shared leaderboards, weekly rivalries, team-level aggregation.
+`packages/web` has two working API routes (`/api/leaderboard` for team leaderboards, `/api/sync` for stats sync) with in-memory storage. No frontend pages exist yet. Remaining work: add a frontend UI (landing page, leaderboard view, shareable rank cards via URL), persistent storage, and authentication.

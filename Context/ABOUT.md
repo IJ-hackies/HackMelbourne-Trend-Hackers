@@ -9,7 +9,8 @@ A VS Code extension that watches your Git activity and reacts like a toxic espor
 - TypeScript (npm workspaces monorepo)
 - VS Code Extension API (`packages/vscode`)
 - Shared core logic (`packages/core`)
-- AI roast generation via Ollama (default) or Gemini, with 60+ template fallbacks
+- AI roast generation via Ollama (default: `deepseek-v4-flash:cloud` on `https://ollama.com/api`) or Gemini, with 60+ template fallbacks
+- Meme vocabulary system (`memes.ts`) — 13 categories of internet/gaming/brainrot slang injected into AI roast prompts
 - Optional Web Speech API for voice TTS roasts (in-webview, no external service)
 
 ## Architecture
@@ -18,13 +19,13 @@ Monorepo with three workspaces:
 
 - **`packages/core`** — Pure logic: Git event analysis, scoring, roast selection, achievements, personality classification, weekly report metrics. No VS Code or DOM dependencies, so it can be reused by the web package or tested in isolation.
 - **`packages/vscode`** — The extension itself: detects Git events (file-system watcher on `.git/`), renders the sidebar dashboard, fires notifications, plays sound effects, calls the AI provider, hosts user-facing commands, and drives the in-sidebar Source Control card via the built-in `vscode.git` extension API. Talks to `core` for all decisioning.
-- **`packages/web`** — Next.js site, intentionally deferred for the hackathon. Not actively developed; build-time only.
+- **`packages/web`** — Next.js 16 site with two working API routes: `/api/leaderboard` (team leaderboard with POST/GET by `teamCode`) and `/api/sync` (generic stats sync endpoint). In-memory storage only — no database. No frontend pages beyond the Next.js default. Dependencies include React 19, Tailwind 4, and `@git-gud/core`.
 
 The **sidebar** is the canonical user surface. New user-facing features should add a button to the sidebar's Actions card and back it with a registered command. The command palette is a fallback, not the primary path.
 
 Sidebar card order (top → bottom): **Rank → Source Control → Personality → Recent Offenses → Achievements → Stats → Actions → Settings**. Rank and Personality are non-collapsible; every other card is collapsible with an animated chevron header, and per-card collapse state persists in `globalState` under the key `gitgud.collapsedSections`.
 
-AI roasts: Ollama is the default (local, free); Gemini is configurable via the sidebar settings. When neither is reachable, the extension falls back to a static template library.
+AI roasts: Ollama is the default (`deepseek-v4-flash:cloud` on `https://ollama.com/api`); Gemini is configurable via the sidebar settings. When neither is reachable, the extension falls back to a static template library. Roasts are generated in parallel (individual per-verdict + combined) for speed.
 
 ## Features
 
@@ -39,6 +40,8 @@ AI roasts: Ollama is the default (local, free); Gemini is configurable via the s
 - **Rank-card export** (`gitgud.exportRankCard`) — saves a 1200×630 SVG "rap sheet" with rank, archetype, and top crimes; offers Open + Share-to-X (tweet intent URL)
 - **Weekly Hygiene Report** (`gitgud.weeklyReport`) — webview panel showing 7-day metrics (commits, force pushes, pushes to main, merge conflicts, branch switches, avg commit size, score delta, savage roast rate, clean streak) each with roast captions and a top-level verdict
 - **Voice roasts** (`gitgud.voiceEnabled`) — optional in-webview SpeechSynthesis for savage roasts and rank-ups
+- **Roast intensity** (`gitgud.roastIntensity`) — `mild`, `medium`, or `savage`; adjusts the severity of displayed notifications
+- **Team sync** (`gitgud.shareToTeam`) — syncs player stats to a shared team leaderboard via the web package's `/api/sync` endpoint; configured by `teamCode` and `syncUrl`
 
 ## Configuration keys (`gitgud.*`)
 
@@ -47,11 +50,16 @@ AI roasts: Ollama is the default (local, free); Gemini is configurable via the s
 - `ollamaApiKey`, `ollamaModel`, `ollamaBaseUrl`, `geminiApiKey`
 - `voiceEnabled` — TTS toggle
 - `commitMessageStyle` — `clean` (Conventional Commits, default) or `savage` (toxic-coach roast); used by the in-sidebar Source Control card's AI Generate button
+- `roastIntensity` — `mild`, `medium`, or `savage` (default); adjusts notification severity level
+- `notificationsEnabled` — toggle notification popups
+- `teamCode` — team code for shared leaderboard
+- `syncUrl` — URL for team stats sync (default: `http://localhost:3000/api/sync`)
 
 ## Commands
 
 - `gitgud.showDashboard`, `gitgud.resetStats`, `gitgud.setApiKey` (legacy MVP)
 - `gitgud.runDemo`, `gitgud.exportRankCard`, `gitgud.weeklyReport` (hackathon shareability)
+- `gitgud.shareToTeam` (team leaderboard sync)
 
 ## Decisions log
 
