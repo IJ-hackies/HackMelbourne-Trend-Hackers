@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Git Gud — the Git coach that roasts you</title>
+<meta name="description" content="A VS Code extension that watches your Git activity and reacts like a toxic esports coach. Scoring, ranks, achievements, AI roasts." />
+<meta property="og:title" content="Git Gud" />
+<meta property="og:description" content="The Git coach that roasts you. VS Code extension." />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header class="nav">
+  <div class="brand">
+    <span class="brand-mark">▲</span>
+    <span class="brand-name">git&nbsp;gud</span>
+  </div>
+  <nav>
+    <a href="#features">features</a>
+    <a href="#install">install</a>
+    <a href="https://github.com/IJ-hackies/HackMelbourne-Trend-Hackers" target="_blank" rel="noopener">github ↗</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <p class="kicker">vs code extension · hackmelbourne</p>
+    <h1>Your Git habits<br/><span class="strike">are mid.</span> <span class="accent">Get roasted.</span></h1>
+    <p class="lede">
+      Git Gud watches your repo and reacts like a toxic esports coach.
+      Force-push to main? Roasted. Fix a typo with a 400-line commit? Roasted.
+      Score your behaviour, climb the rank ladder, unlock cursed achievements.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="vscode:extension/git-gud.git-gud-vscode">
+        <span>Open in VS Code</span><span class="arrow">→</span>
+      </a>
+      <a class="btn ghost" href="https://github.com/IJ-hackies/HackMelbourne-Trend-Hackers#install">
+        Install instructions
+      </a>
+    </div>
+    <p class="footnote">
+      Not on Marketplace yet — install via VSIX from the
+      <a href="https://github.com/IJ-hackies/HackMelbourne-Trend-Hackers">repo</a>.
+    </p>
+  </section>
+
+  <section class="ranks" aria-label="Rank ladder">
+    <div class="rank">bronze</div>
+    <div class="rank">silver</div>
+    <div class="rank">gold</div>
+    <div class="rank">platinum</div>
+    <div class="rank glow">diamond</div>
+  </section>
+
+  <section id="features" class="features">
+    <h2>What it does</h2>
+    <div class="grid">
+      <article>
+        <h3>AI roasts</h3>
+        <p>Ollama (default) or Gemini, with 60+ template fallbacks injected with internet-brainrot vocabulary. Goes hard.</p>
+      </article>
+      <article>
+        <h3>Score &amp; ranks</h3>
+        <p>Bronze → Diamond. Every commit, push, and merge conflict shifts your score in real time.</p>
+      </article>
+      <article>
+        <h3>20 achievements</h3>
+        <p>Unlocked from real Git behaviour. Mostly humiliating. Occasionally aspirational.</p>
+      </article>
+      <article>
+        <h3>Source control, but worse</h3>
+        <p>In-sidebar SCM with AI-generated commit messages. Pick clean (Conventional Commits) or savage (toxic coach).</p>
+      </article>
+      <article>
+        <h3>Weekly hygiene report</h3>
+        <p>7-day metrics — force pushes, pushes to main, conflicts, streaks — each with a roast caption.</p>
+      </article>
+      <article>
+        <h3>Shareable rank card</h3>
+        <p>Export your rap sheet as a 1200×630 SVG. One click to tweet it.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="install" class="install">
+    <h2>Install</h2>
+    <ol>
+      <li>Clone <code>IJ-hackies/HackMelbourne-Trend-Hackers</code></li>
+      <li><code>npm install</code> at the repo root</li>
+      <li><code>npm run build -w packages/vscode</code></li>
+      <li>Open <code>packages/vscode</code> in VS Code, press <kbd>F5</kbd></li>
+    </ol>
+  </section>
+</main>
+
+<footer>
+  <span>Built for HackMelbourne by Trend Hackers.</span>
+  <span>MIT.</span>
+</footer>
+</body>
+</html>

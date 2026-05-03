@@ -1,9 +1,11 @@
 export type { GitEventType, GitEvent, Score, Rank, Achievement, AchievementTrigger, AchievementDefinition, Roast, ReactionImageEntry, RoastResult, PlayerStats } from './types';
 export type { Severity, AnalysisVerdict, CommitMessageVerdict, BranchNameVerdict, CommitSizeVerdict, RiskyActionVerdict, SessionVerdict, AnyVerdict, AnalysisContext, AnalysisResult, CommitSizeStats } from './analysis';
 export { analyzeCommitMessage, analyzeBranchName, analyzeCommitSize, THRESHOLDS, classifyRiskyAction, analyzeSession, SESSION_THRESHOLDS, analyzeEvent } from './analysis';
-export { generateRoast, generateRoasts, generateCombinedRoast, generateTemplateRoast } from './roasts';
-export type { RoastConfig, OllamaConfig, GeminiConfig } from './roasts';
-export { MEME_CATEGORIES, pickMemePool } from './memes';
+export { generateRoast, generateRoasts, generateCombinedRoast, generateTemplateRoast, generateHype } from './roasts';
+export type { RoastConfig, OllamaConfig, GeminiConfig, ClaudeConfig, OpenaiConfig, XaiConfig, Provider } from './roasts';
+export { PROVIDER_MODELS, DEFAULT_MODELS, PROVIDER_LABELS } from './roasts';
+export { MEME_CATEGORIES, VERDICT_TAGS, pickMemePoolForVerdicts, formatMemePoolForPrompt } from './memes';
+export type { Tag, MemeCategory, PickedCategory, PickOptions } from './memes';
 export { calculateScore, SEVERITY_MULTIPLIER, CATEGORY_POINTS } from './scoring';
 export { RANK_LADDER, evaluateRank } from './ranks';
 export type { RankEvaluation } from './ranks';

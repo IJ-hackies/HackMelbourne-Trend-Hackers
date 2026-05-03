@@ -24,11 +24,18 @@ export interface SidebarData {
     totalBranchSwitches: number;
   };
   soundEnabled: boolean;
-  aiProvider: 'ollama' | 'gemini';
+  aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai';
   ollamaApiKey: string;
   ollamaModel: string;
   ollamaBaseUrl: string;
   geminiApiKey: string;
+  geminiModel: string;
+  claudeApiKey: string;
+  claudeModel: string;
+  openaiApiKey: string;
+  openaiModel: string;
+  xaiApiKey: string;
+  xaiModel: string;
   commitMessageStyle: 'clean' | 'savage';
   sourceControl: SourceControlSnapshot;
   collapsed: Record<string, boolean>;
@@ -37,7 +44,7 @@ export interface SidebarData {
 export type SidebarMessage =
   | { type: 'ready' }
   | { type: 'runCommand'; command: string }
-  | { type: 'saveSettings'; aiProvider: string; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; commitMessageStyle: string }
+  | { type: 'saveSettings'; aiProvider: string; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: string }
   | { type: 'sc:generate' }
   | { type: 'sc:commit'; message: string; push?: boolean; amend?: boolean }
   | { type: 'sc:pullAndPush' }
@@ -86,11 +93,18 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         vscode.commands.executeCommand(msg.command);
       } else if (msg.type === 'saveSettings') {
         const cfg = vscode.workspace.getConfiguration('gitgud');
-        await cfg.update('aiProvider', msg.aiProvider || 'ollama', true);
+        await cfg.update('aiProvider', msg.aiProvider || 'gemini', true);
         await cfg.update('ollamaApiKey', msg.ollamaApiKey || '', true);
         await cfg.update('ollamaModel', msg.ollamaModel || '', true);
         await cfg.update('ollamaBaseUrl', msg.ollamaBaseUrl || '', true);
         await cfg.update('geminiApiKey', msg.geminiApiKey || '', true);
+        await cfg.update('geminiModel', msg.geminiModel || 'gemini-2.5-flash', true);
+        await cfg.update('claudeApiKey', msg.claudeApiKey || '', true);
+        await cfg.update('claudeModel', msg.claudeModel || 'claude-sonnet-4-6', true);
+        await cfg.update('openaiApiKey', msg.openaiApiKey || '', true);
+        await cfg.update('openaiModel', msg.openaiModel || 'gpt-4o-mini', true);
+        await cfg.update('xaiApiKey', msg.xaiApiKey || '', true);
+        await cfg.update('xaiModel', msg.xaiModel || 'grok-3-mini', true);
         await cfg.update('commitMessageStyle', msg.commitMessageStyle || 'clean', true);
       } else if (msg.type === 'sc:generate') {
         await this._handlers?.onSCGenerate();
@@ -109,6 +123,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   buildSidebarData(
     playerState: PlayerState,
     eventHistory: StoredEvent[],
+    configFields: { aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: 'clean' | 'savage' },
     configFields: { aiProvider: 'ollama' | 'gemini'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; commitMessageStyle: 'clean' | 'savage'; soundEnabled: boolean },
     sourceControl: SourceControlSnapshot,
     collapsed: Record<string, boolean>,
@@ -145,6 +160,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       ollamaModel: configFields.ollamaModel,
       ollamaBaseUrl: configFields.ollamaBaseUrl,
       geminiApiKey: configFields.geminiApiKey,
+      geminiModel: configFields.geminiModel,
+      claudeApiKey: configFields.claudeApiKey,
+      claudeModel: configFields.claudeModel,
+      openaiApiKey: configFields.openaiApiKey,
+      openaiModel: configFields.openaiModel,
+      xaiApiKey: configFields.xaiApiKey,
+      xaiModel: configFields.xaiModel,
       commitMessageStyle: configFields.commitMessageStyle,
       sourceControl,
       collapsed,
@@ -194,45 +216,62 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; media-src *; img-src ${webview.cspSource};" />
 <style nonce="${nonce}">
 :root {
+  --bg: #0a0a0b;
+  --panel: #111114;
+  --panel-2: #15151a;
+  --ink: #ededee;
+  --ink-2: #c4c4c8;
+  --mute: #8a8a92;
+  --line: #1f1f24;
+  --accent: #c8ff00;
+  --accent-2: #d6ff3a;
+  --hot: #ff3d6a;
+  --positive: #c8ff00;
+  --negative: #ff3d6a;
+  --critical: #ff3d6a;
   --rank-bronze: #cd7f32;
   --rank-silver: #c0c0c0;
   --rank-gold: #ffd700;
   --rank-platinum: #00cec9;
-  --rank-diamond: #00d2ff;
-  --positive: #00b894;
-  --negative: #e17055;
-  --critical: #d63031;
-  --accent: #6c5ce7;
+  --rank-diamond: #c8ff00;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: var(--vscode-font-family, sans-serif);
-  font-size: var(--vscode-font-size, 13px);
-  color: var(--vscode-foreground);
-  background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg);
+  background-image:
+    radial-gradient(900px 500px at 100% -10%, rgba(200, 255, 0, 0.06), transparent 60%),
+    radial-gradient(700px 420px at -20% 30%, rgba(255, 61, 106, 0.05), transparent 60%);
+  background-attachment: fixed;
   padding: 0;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 .container { padding: 12px; }
 
 .card {
-  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
-  border: 1px solid var(--vscode-widget-border, var(--vscode-editorWidget-border, transparent));
-  border-radius: 6px;
-  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
   margin-bottom: 10px;
 }
 
 .card-title {
-  font-size: 10px;
-  font-weight: 700;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 8px;
+  letter-spacing: 0.15em;
+  color: var(--mute);
+  margin-bottom: 10px;
 }
 
 .card-header {
@@ -246,18 +285,19 @@ body {
   text-align: center;
   margin-bottom: 0;
   grid-column: 1 / 2;
-  padding-left: 18px; /* balances the chev column so the title sits visually centered */
+  padding-left: 18px;
 }
 .card-header .chev {
   display: inline-block;
   width: 18px;
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   transition: transform 0.15s ease;
-  color: var(--vscode-descriptionForeground);
+  color: var(--mute);
 }
 .card-header.collapsed .chev { transform: rotate(-90deg); }
+.card-header:hover .chev { color: var(--accent); }
 .card-body {
   overflow: hidden;
   max-height: 4000px;
@@ -272,37 +312,37 @@ body {
 }
 
 /* RANK */
-.rank-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-.rank-score { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.rank-delta { font-size: 12px; font-weight: 600; margin-left: 6px; }
-.rank-delta.positive { color: var(--positive); }
-.rank-delta.negative { color: var(--negative); }
-.progress-track { height: 6px; background: var(--vscode-progressBar-background, #333); border-radius: 3px; margin-top: 8px; overflow: hidden; opacity: 0.3; }
-.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-.next-rank { font-size: 11px; color: var(--vscode-descriptionForeground); margin-top: 4px; }
+.rank-name { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 6px; }
+.rank-score { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--ink); }
+.rank-delta { font-family: var(--mono); font-size: 12px; font-weight: 700; margin-left: 8px; }
+.rank-delta.positive { color: var(--accent); }
+.rank-delta.negative { color: var(--hot); }
+.progress-track { height: 4px; background: var(--line); border-radius: 999px; margin-top: 10px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; box-shadow: 0 0 12px -2px currentColor; }
+.next-rank { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em; color: var(--mute); margin-top: 8px; text-transform: uppercase; }
 
 /* PERSONALITY */
-.personality-type { font-size: 15px; font-weight: 700; }
-.personality-desc { font-size: 12px; color: var(--vscode-descriptionForeground); margin-top: 3px; font-style: italic; }
+.personality-type { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+.personality-desc { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; font-style: italic; }
 
 /* SOURCE CONTROL */
 .sc-message-wrap {
   position: relative;
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, var(--vscode-widget-border, #555));
-  border-radius: 3px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
   transition: border-color 0.15s ease;
 }
-.sc-message-wrap:focus-within { border-color: var(--vscode-focusBorder, var(--accent)); }
+.sc-message-wrap:focus-within { border-color: var(--accent); }
 .sc-input {
   display: block;
   width: 100%;
   min-height: 56px;
-  padding: 6px 8px 28px 8px;
-  font-size: 12px;
-  line-height: 1.4;
-  font-family: var(--vscode-font-family, sans-serif);
-  color: var(--vscode-input-foreground);
+  padding: 8px 10px 32px 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  font-family: var(--mono);
+  color: var(--ink);
   background: transparent;
   border: none;
   outline: none;
@@ -310,109 +350,142 @@ body {
   overflow: hidden;
   box-sizing: border-box;
 }
+.sc-input::placeholder { color: var(--mute); }
 .sc-input:disabled { opacity: 0.6; }
 .sc-generate {
   position: absolute;
-  right: 4px;
-  bottom: 4px;
-  padding: 2px 8px;
-  font-size: 10px;
+  right: 5px;
+  bottom: 5px;
+  padding: 3px 10px;
+  font-size: 10.5px;
   font-weight: 600;
   line-height: 1.4;
-  font-family: var(--vscode-font-family, sans-serif);
-  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
-  background: var(--vscode-button-secondaryBackground, rgba(255,255,255,0.06));
-  border: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.12));
-  border-radius: 3px;
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
 }
-.sc-generate:hover:not(:disabled) { background: var(--vscode-button-secondaryHoverBackground, rgba(255,255,255,0.12)); }
-.sc-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+.sc-generate:hover:not(:disabled) { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.sc-generate:disabled { opacity: 0.4; cursor: not-allowed; }
 .sc-btn {
-  padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: var(--vscode-font-family, sans-serif);
-  color: var(--vscode-button-foreground);
-  background: var(--vscode-button-background);
-  border: none;
-  border-radius: 3px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s, transform 0.08s;
 }
-.sc-btn:hover:not(:disabled) { background: var(--vscode-button-hoverBackground); }
-.sc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.sc-btn:hover:not(:disabled) { background: var(--accent-2); }
+.sc-btn:active:not(:disabled) { transform: translateY(1px); }
+.sc-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .sc-btn.secondary {
-  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
-  background: var(--vscode-button-secondaryBackground, transparent);
-  border: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.12));
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
 }
-.sc-btn.secondary:hover:not(:disabled) { background: var(--vscode-button-secondaryHoverBackground, rgba(255,255,255,0.04)); }
-.sc-commit-row { display: flex; margin-top: 8px; }
+.sc-btn.secondary:hover:not(:disabled) { background: var(--panel-2); border-color: var(--mute); }
+.sc-commit-row { display: flex; margin-top: 10px; }
 .sc-commit-main {
   flex: 1;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 .sc-commit-caret {
-  width: 24px;
+  width: 28px;
   padding: 0;
-  border-left: 1px solid rgba(0,0,0,0.25);
+  border-left: 1px solid rgba(10,10,11,0.25);
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
-.sc-menu {
-  position: relative;
-}
+.sc-menu { position: relative; }
 .sc-menu-pop {
   position: absolute;
   top: 100%;
   right: 0;
-  margin-top: 2px;
-  background: var(--vscode-menu-background, var(--vscode-editorWidget-background));
-  border: 1px solid var(--vscode-widget-border, #555);
-  border-radius: 3px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  margin-top: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6);
   z-index: 10;
   min-width: 180px;
   display: none;
+  overflow: hidden;
 }
 .sc-menu-pop.open { display: block; }
 .sc-menu-item {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 6px 10px;
+  padding: 8px 12px;
   font-size: 12px;
-  color: var(--vscode-menu-foreground, var(--vscode-foreground));
+  font-family: var(--sans);
+  color: var(--ink);
   background: transparent;
   border: none;
   cursor: pointer;
-  font-family: inherit;
 }
-.sc-menu-item:hover { background: var(--vscode-menu-selectionBackground, rgba(255,255,255,0.08)); }
-.sc-branch-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-.sc-branch-label { font-size: 11px; color: var(--vscode-descriptionForeground); flex-shrink: 0; }
+.sc-menu-item:hover { background: var(--bg); color: var(--accent); }
+.sc-branch-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.sc-branch-label { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mute); flex-shrink: 0; }
 .sc-select {
   flex: 1; min-width: 0;
-  padding: 4px 6px;
+  padding: 6px 8px;
   font-size: 12px;
-  color: var(--vscode-dropdown-foreground, var(--vscode-foreground));
-  background: var(--vscode-dropdown-background, var(--vscode-input-background));
-  border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border, #555));
-  border-radius: 3px;
+  font-family: var(--mono);
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
   outline: none;
+  transition: border-color 0.15s;
+}
+.sc-select:focus { border-color: var(--accent); }
+.sc-select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--mute) 50%), linear-gradient(135deg, var(--mute) 50%, transparent 50%); background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
+
+/* Native dropdown popup styling (Electron/Chromium) */
+select option, select optgroup {
+  background: var(--panel-2);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 8px;
+}
+select optgroup {
+  color: var(--mute);
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+}
+select option:checked, select option:hover {
+  background: var(--accent) linear-gradient(0deg, var(--accent), var(--accent));
+  color: var(--bg);
 }
 .sc-changes {
-  margin-top: 10px;
-  border-top: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.06));
-  padding-top: 8px;
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
 }
 .sc-changes-title {
-  font-size: 11px;
+  font-family: var(--mono);
+  font-size: 10.5px;
   font-weight: 600;
-  color: var(--vscode-descriptionForeground);
-  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mute);
+  margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
 }
@@ -420,73 +493,154 @@ body {
 .sc-change-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 0;
+  gap: 8px;
+  padding: 3px 0;
   font-size: 12px;
+  font-family: var(--mono);
 }
 .sc-change-status {
   flex-shrink: 0;
   width: 14px;
   text-align: center;
   font-weight: 700;
-  font-family: var(--vscode-editor-font-family, monospace);
 }
 .sc-change-status.M { color: #e2c08d; }
-.sc-change-status.A { color: var(--positive); }
-.sc-change-status.D { color: var(--negative); }
-.sc-change-status.U, .sc-change-status\\?\\? { color: var(--positive); }
-.sc-change-status.C { color: var(--critical); }
+.sc-change-status.A { color: var(--accent); }
+.sc-change-status.D { color: var(--hot); }
+.sc-change-status.U, .sc-change-status\\?\\? { color: var(--accent); }
+.sc-change-status.C { color: var(--hot); }
 .sc-change-path {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--ink-2);
 }
 .sc-error {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--negative);
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  color: var(--hot);
   word-break: break-word;
 }
 .sc-empty {
-  font-size: 11px;
-  color: var(--vscode-descriptionForeground);
+  font-size: 11.5px;
+  color: var(--mute);
   font-style: italic;
   padding: 4px 0;
 }
 .sc-pullretry {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--negative);
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--hot);
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 
 /* EVENTS */
+.event-scroll {
+  max-height: 460px;
+  overflow-y: auto;
+  margin: 0 -6px;
+  padding: 0 6px;
+}
+.event-scroll::-webkit-scrollbar { width: 8px; }
+.event-scroll::-webkit-scrollbar-track { background: transparent; }
+.event-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+.event-scroll::-webkit-scrollbar-thumb:hover { background: var(--mute); }
 .event-list { list-style: none; }
-.event-item { display: flex; align-items: baseline; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.06)); font-size: 12px; }
-.event-item:last-child { border-bottom: none; }
-.event-icon { flex-shrink: 0; width: 18px; text-align: center; }
-.event-type { flex-shrink: 0; font-weight: 600; width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.event-delta { flex-shrink: 0; font-weight: 700; font-variant-numeric: tabular-nums; width: 40px; text-align: right; }
-.event-delta.positive { color: var(--positive); }
-.event-delta.negative { color: var(--negative); }
-.event-time { flex-shrink: 0; color: var(--vscode-descriptionForeground); font-size: 11px; margin-left: auto; }
-.event-roast { display: block; font-size: 11px; color: var(--vscode-descriptionForeground); padding: 2px 0 2px 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.empty-state { color: var(--vscode-descriptionForeground); font-style: italic; font-size: 12px; text-align: center; padding: 12px 0; }
+.event-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  margin: 0 -6px;
+  padding-left: 6px;
+  padding-right: 6px;
+  border-radius: 4px;
+}
+.event-row:hover { background: var(--panel-2); }
+.event-row:last-child { border-bottom: none; }
+.event-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px;
+}
+.event-icon { flex-shrink: 0; width: 18px; text-align: center; font-size: 14px; }
+.event-type {
+  flex-shrink: 0; font-family: var(--mono); font-weight: 600;
+  font-size: 11.5px; letter-spacing: 0.02em;
+  width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink);
+}
+.event-delta {
+  flex-shrink: 0; font-family: var(--mono); font-weight: 700;
+  font-variant-numeric: tabular-nums; min-width: 44px; text-align: right;
+  font-size: 12px;
+}
+.event-delta.positive { color: var(--accent); }
+.event-delta.negative { color: var(--hot); }
+.event-time { flex-shrink: 0; font-family: var(--mono); color: var(--mute); font-size: 10.5px; margin-left: auto; }
+.event-roast {
+  display: block; font-size: 12px; color: var(--ink-2);
+  line-height: 1.5;
+  padding: 8px 0 0 28px;
+  font-style: italic;
+}
+.event-roast.truncated {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.event-expand {
+  margin: 10px 0 4px 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mute);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.12s;
+}
+.event-expand:hover { color: var(--accent); }
+.event-expand .icon { font-size: 11px; }
+.event-advice {
+  margin: 8px 0 4px 28px;
+  padding: 10px 12px;
+  background: rgba(200, 255, 0, 0.05);
+  border: 1px solid rgba(200, 255, 0, 0.15);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.event-advice .icon { color: var(--accent); font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+.empty-state { color: var(--mute); font-style: italic; font-size: 12px; text-align: center; padding: 16px 0; }
 
 /* ACHIEVEMENTS */
-.achievement-grid { display: flex; flex-direction: column; gap: 6px; }
-.achievement-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-.ach-icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; background: var(--vscode-badge-background, #333); color: var(--vscode-badge-foreground, #fff); }
-.ach-icon.unlocked { background: var(--rank-gold); color: #000; }
+.achievement-grid { display: flex; flex-direction: column; gap: 8px; }
+.achievement-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+.ach-icon {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; background: var(--panel-2); color: var(--mute);
+  border: 1px solid var(--line);
+}
+.ach-icon.unlocked { background: var(--accent); color: var(--bg); border-color: var(--accent); box-shadow: 0 0 12px -4px var(--accent); }
 .ach-info { flex: 1; min-width: 0; }
-.ach-name { font-weight: 600; }
-.ach-name.locked { opacity: 0.5; }
-.ach-desc { font-size: 11px; color: var(--vscode-descriptionForeground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ach-progress-track { width: 100%; height: 3px; background: var(--vscode-progressBar-background, #333); border-radius: 2px; margin-top: 2px; overflow: hidden; opacity: 0.4; }
-.ach-progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
-.ach-count { font-size: 11px; color: var(--vscode-descriptionForeground); margin-bottom: 6px; }
+.ach-name { font-weight: 700; font-size: 12.5px; color: var(--ink); }
+.ach-name.locked { color: var(--mute); font-weight: 600; }
+.ach-desc { font-size: 11.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.ach-progress-track { width: 100%; height: 2px; background: var(--line); border-radius: 999px; margin-top: 4px; overflow: hidden; }
+.ach-progress-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s ease; }
+.ach-count { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mute); margin-bottom: 10px; }
 
 /* STATS */
 .stat-grid { display: flex; flex-direction: column; }
@@ -495,61 +649,103 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  padding: 5px 0;
-  font-size: 12px;
-  border-bottom: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.05));
+  padding: 7px 0;
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--line);
 }
 .stat-item:last-child { border-bottom: none; }
 .stat-label {
-  color: var(--vscode-descriptionForeground);
+  font-family: var(--mono);
+  color: var(--mute);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .stat-value {
+  font-family: var(--mono);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
-  color: var(--vscode-foreground);
+  color: var(--ink);
   flex-shrink: 0;
 }
 
 /* SETTINGS */
-.settings-field { margin-bottom: 8px; }
-.settings-label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 3px; color: var(--vscode-descriptionForeground); }
-.settings-input, .settings-select {
-  width: 100%; padding: 4px 6px; font-size: 12px;
-  font-family: var(--vscode-font-family, monospace);
-  color: var(--vscode-input-foreground);
-  background: var(--vscode-input-background);
-  border: 1px solid var(--vscode-input-border, var(--vscode-widget-border, #555));
-  border-radius: 3px; outline: none;
+.settings-field { margin-bottom: 12px; }
+.settings-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+  color: var(--mute);
 }
-.settings-input:focus, .settings-select:focus { border-color: var(--vscode-focusBorder, var(--accent)); }
-.settings-hint { font-size: 10px; color: var(--vscode-descriptionForeground); margin-top: 2px; opacity: 0.7; }
-.settings-save { margin-top: 4px; padding: 4px 12px; font-size: 11px; font-weight: 600; color: var(--vscode-button-foreground); background: var(--vscode-button-background); border: none; border-radius: 3px; cursor: pointer; }
-.settings-save:hover { background: var(--vscode-button-hoverBackground); }
-.settings-saved { font-size: 11px; color: var(--positive); margin-left: 8px; opacity: 0; transition: opacity 0.3s ease; }
+.settings-input, .settings-select {
+  width: 100%; padding: 7px 9px; font-size: 12px;
+  font-family: var(--mono);
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px; outline: none;
+  transition: border-color 0.15s;
+}
+.settings-input:focus, .settings-select:focus { border-color: var(--accent); }
+.settings-select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--mute) 50%), linear-gradient(135deg, var(--mute) 50%, transparent 50%); background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 24px; }
+.settings-input::placeholder { color: var(--mute); }
+.settings-hint { font-family: var(--mono); font-size: 10px; color: var(--mute); margin-top: 4px; opacity: 0.8; }
+.settings-save {
+  margin-top: 6px; padding: 8px 16px; font-size: 11.5px; font-weight: 700;
+  font-family: var(--mono); letter-spacing: 0.05em;
+  color: var(--bg); background: var(--accent);
+  border: 1px solid var(--accent); border-radius: 6px; cursor: pointer;
+  transition: background 0.15s;
+}
+.settings-save:hover { background: var(--accent-2); }
+.settings-saved { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-left: 10px; opacity: 0; transition: opacity 0.3s ease; }
 .settings-saved.show { opacity: 1; }
-.settings-status { font-size: 11px; margin-top: 6px; }
-.settings-status.connected { color: var(--positive); }
-.settings-status.disconnected { color: var(--vscode-descriptionForeground); }
+.settings-status { font-family: var(--mono); font-size: 11px; margin-top: 10px; }
+.settings-status.connected { color: var(--accent); }
+.settings-status.disconnected { color: var(--mute); }
 
 /* ACTIONS */
-.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .action-btn {
-  padding: 6px 8px; font-size: 11px; font-weight: 600;
-  font-family: var(--vscode-font-family, sans-serif);
-  color: var(--vscode-foreground);
-  background: transparent;
-  border: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.12));
-  border-radius: 3px; cursor: pointer; text-align: center;
+  padding: 9px 10px; font-size: 11.5px; font-weight: 700;
+  font-family: var(--mono); letter-spacing: 0.05em;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px; cursor: pointer; text-align: center;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  min-width: 0; transition: background 0.15s ease, border-color 0.15s ease;
+  min-width: 0; transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.action-btn:hover { background: rgba(255,255,255,0.04); border-color: var(--vscode-focusBorder, var(--accent)); }
-.action-btn.danger { color: var(--negative); border-color: rgba(225,112,85,0.35); }
-.action-btn.danger:hover { background: rgba(225,112,85,0.08); border-color: var(--negative); }
+.action-btn:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+.action-btn.danger { color: var(--hot); border-color: rgba(255,61,106,0.35); }
+.action-btn.danger:hover { background: rgba(255,61,106,0.08); border-color: var(--hot); color: var(--hot); }
+
+/* ICONS */
+.icon {
+  display: inline-block;
+  vertical-align: -0.18em;
+  width: 1em;
+  height: 1em;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  flex-shrink: 0;
+}
+.card-title .icon { font-size: 13px; margin-right: 4px; color: var(--accent); }
+.event-icon .icon { font-size: 14px; color: var(--mute); }
+.event-icon.danger .icon { color: var(--hot); }
+.event-icon.warn .icon { color: #e2c08d; }
+.ach-icon .icon { font-size: 12px; vertical-align: -0.15em; }
+.status-icon { font-size: 13px; vertical-align: -0.18em; margin-right: 4px; }
 
 /* LATEST ROAST */
 .latest-roast-img {
@@ -604,8 +800,11 @@ body {
 .roast-history-time { display: block; font-size: 10px; color: var(--vscode-descriptionForeground); margin-top: 2px; }
 
 /* LOADING */
-.loading { text-align: center; padding: 40px 12px; color: var(--vscode-descriptionForeground); }
-.loading-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--vscode-foreground); }
+.loading { text-align: center; padding: 56px 12px; color: var(--mute); }
+.loading-title {
+  font-family: var(--mono); font-size: 14px; font-weight: 800;
+  letter-spacing: 0.2em; margin-bottom: 8px; color: var(--accent);
+}
 </style>
 </head>
 <body>
@@ -621,12 +820,43 @@ body {
   const vscode = acquireVsCodeApi();
   const root = document.getElementById('root');
 
-  const REACTIONS_BASE = '${reactionsBaseUri}';
+  const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#c8ff00' };
 
-  const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#00d2ff' };
+  // Lucide-style icon paths (24x24 viewBox, stroke=currentColor)
+  const ICONS = {
+    swords: '<polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/>',
+    branch: '<line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+    brain: '<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>',
+    scroll: '<path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>',
+    trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+    chart: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+    zap: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+    settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    commit: '<circle cx="12" cy="12" r="3"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/>',
+    shuffle: '<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/>',
+    flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+    rotate: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+    merge: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    lock: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    chevron: '<polyline points="6 9 12 15 18 9"/>',
+    chevronUp: '<polyline points="18 15 12 9 6 15"/>',
+    bulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+    dot: '<circle cx="12" cy="12" r="2"/>',
+  };
+  function svgIcon(name, extraClass) {
+    const path = ICONS[name] || ICONS.dot;
+    const cls = 'icon' + (extraClass ? ' ' + extraClass : '');
+    return '<svg class="' + cls + '" viewBox="0 0 24 24" aria-hidden="true">' + path + '</svg>';
+  }
   const EVENT_ICONS = {
-    'commit': '\\u{1F4DD}', 'branch-switch': '\\u{1F500}', 'force-push': '\\u{1F4A5}',
-    'merge-conflict': '\\u{2694}\\u{FE0F}', 'rebase': '\\u{1F504}', 'push': '\\u{1F4E4}', 'merge': '\\u{1F517}',
+    'commit': 'commit', 'branch-switch': 'shuffle', 'force-push': 'flame',
+    'merge-conflict': 'swords', 'rebase': 'rotate', 'push': 'upload', 'merge': 'merge',
+  };
+  const EVENT_ICON_TONE = {
+    'force-push': 'danger', 'merge-conflict': 'danger', 'commit': 'warn',
   };
 
   let state = null;
@@ -638,6 +868,8 @@ body {
   let scShowPullRetry = false;
   let scMenuOpen = false;
   let scLastError = '';
+  // Per-event expanded state (keyed by index in current eventHistory)
+  let eventExpanded = {};
 
   function timeAgo(ts) {
     const s = Math.floor((Date.now() - ts) / 1000);
@@ -648,10 +880,10 @@ body {
   }
   function esc(str) { const d = document.createElement('div'); d.textContent = str == null ? '' : String(str); return d.innerHTML; }
 
-  function collapsibleHeader(key, icon, title, collapsed) {
+  function collapsibleHeader(key, iconName, title, collapsed) {
     return '<div class="card-header ' + (collapsed ? 'collapsed' : '') + '" data-collapse-key="' + key + '">' +
-      '<span class="card-title">' + icon + ' ' + title + '</span>' +
-      '<span class="chev">\\u{25BC}</span>' +
+      '<span class="card-title">' + svgIcon(iconName) + title + '</span>' +
+      '<span class="chev">' + svgIcon('chevron') + '</span>' +
     '</div>';
   }
 
@@ -707,7 +939,7 @@ body {
     const deltaSign = d.score.delta >= 0 ? '+' : '';
     const deltaClass = d.score.delta >= 0 ? 'positive' : 'negative';
     let h = '<div class="card">';
-    h += '<div class="card-title">\\u{2694}\\u{FE0F} Rank</div>';
+    h += '<div class="card-title">' + svgIcon('swords') + 'Rank</div>';
     h += '<div class="rank-name" style="color:' + color + '">' + esc(d.rank.name) + '</div>';
     h += '<div><span class="rank-score">' + d.score.total + '</span>';
     h += '<span class="rank-delta ' + deltaClass + '">' + deltaSign + d.score.delta + '</span></div>';
@@ -722,7 +954,7 @@ body {
     if (!sc || !sc.available) return '';
     const collapsed = !!d.collapsed['sc'];
     let h = '<div class="card">';
-    h += collapsibleHeader('sc', '\\u{1F527}', 'Source Control', collapsed);
+    h += collapsibleHeader('sc', 'branch', 'Source Control', collapsed);
     h += '<div class="card-body ' + (collapsed ? 'collapsed' : '') + '" style="margin-top:36px">';
 
     // Branch picker
@@ -756,7 +988,7 @@ body {
 
     // Message + Generate
     const hasChanges = sc.changes.length > 0;
-    const hasKey = (d.aiProvider === 'gemini' && d.geminiApiKey) || (d.aiProvider === 'ollama' && d.ollamaApiKey);
+    const hasKey = !!(d[d.aiProvider + 'ApiKey']);
     const genDisabled = !hasChanges || !hasKey || scGenerating;
     h += '<div class="sc-message-wrap">';
     h += '<textarea class="sc-input" id="sc-message" rows="2" placeholder="Message (' + (d.commitMessageStyle === 'savage' ? 'savage' : 'clean') + ')" ' + (scGenerating ? 'disabled' : '') + '>' + esc(scMessage) + '</textarea>';
@@ -769,8 +1001,8 @@ body {
     // Commit split-button
     const commitDisabled = !hasChanges || scGenerating;
     h += '<div class="sc-commit-row sc-menu">';
-    h += '<button class="sc-btn sc-commit-main" id="sc-commit" ' + (commitDisabled ? 'disabled' : '') + '>\\u2713 Commit</button>';
-    h += '<button class="sc-btn sc-commit-caret" id="sc-commit-caret" ' + (commitDisabled ? 'disabled' : '') + ' title="More commit actions">\\u25BE</button>';
+    h += '<button class="sc-btn sc-commit-main" id="sc-commit" ' + (commitDisabled ? 'disabled' : '') + '>' + svgIcon('check') + ' Commit</button>';
+    h += '<button class="sc-btn sc-commit-caret" id="sc-commit-caret" ' + (commitDisabled ? 'disabled' : '') + ' title="More commit actions">' + svgIcon('chevron') + '</button>';
     h += '<div class="sc-menu-pop ' + (scMenuOpen ? 'open' : '') + '" id="sc-menu-pop">';
     h += '<button class="sc-menu-item" data-commit-action="commit-push">Commit &amp; Push</button>';
     h += '<button class="sc-menu-item" data-commit-action="amend">Amend Last Commit</button>';
@@ -783,7 +1015,7 @@ body {
 
     // Changes
     h += '<div class="sc-changes">';
-    h += '<div class="sc-changes-title"><span>\\u{25BE} Changes</span><span>' + sc.changes.length + '</span></div>';
+    h += '<div class="sc-changes-title"><span>' + svgIcon('chevron') + ' Changes</span><span>' + sc.changes.length + '</span></div>';
     if (sc.changes.length === 0) {
       h += '<div class="sc-empty">Working tree clean.</div>';
     } else {
@@ -804,7 +1036,7 @@ body {
 
   function renderPersonality(d) {
     let h = '<div class="card">';
-    h += '<div class="card-title">\\u{1F9E0} Personality</div>';
+    h += '<div class="card-title">' + svgIcon('brain') + 'Personality</div>';
     h += '<div class="personality-type">' + esc(d.personality.type) + '</div>';
     h += '<div class="personality-desc">' + esc(d.personality.description) + '</div>';
     h += '</div>';
@@ -814,26 +1046,42 @@ body {
   function renderOffenses(d) {
     const collapsed = !!d.collapsed['offenses'];
     let h = '<div class="card">';
-    h += collapsibleHeader('offenses', '\\u{1F4CB}', 'Recent Offenses', collapsed);
+    h += collapsibleHeader('offenses', 'scroll', 'Recent Offenses', collapsed);
     h += '<div class="card-body ' + (collapsed ? 'collapsed' : '') + '" style="margin-top:36px">';
     if (d.eventHistory.length === 0) {
       h += '<div class="empty-state">No offenses recorded yet. Go commit something.</div>';
     } else {
-      h += '<ul class="event-list">';
-      for (const e of d.eventHistory.slice(0, 15)) {
-        const icon = EVENT_ICONS[e.type] || '\\u{2022}';
+      h += '<div class="event-scroll"><ul class="event-list">';
+      for (let i = 0; i < d.eventHistory.length; i++) {
+        const e = d.eventHistory[i];
+        const iconName = EVENT_ICONS[e.type] || 'dot';
+        const tone = EVENT_ICON_TONE[e.type] || '';
         const edelta = e.scoreDelta >= 0 ? '+' + e.scoreDelta : '' + e.scoreDelta;
         const edeltaClass = e.scoreDelta >= 0 ? 'positive' : 'negative';
-        h += '<li><div class="event-item">';
-        h += '<span class="event-icon">' + icon + '</span>';
+        const expanded = !!eventExpanded[i];
+        const hasAdvice = !!(e.roastAdvice && e.roastAdvice.length > 0);
+        h += '<li class="event-row" data-event-idx="' + i + '">';
+        h += '<div class="event-item">';
+        h += '<span class="event-icon ' + tone + '">' + svgIcon(iconName) + '</span>';
         h += '<span class="event-type">' + esc(e.type) + '</span>';
         h += '<span class="event-delta ' + edeltaClass + '">' + edelta + '</span>';
         h += '<span class="event-time">' + timeAgo(e.timestamp) + '</span>';
         h += '</div>';
-        if (e.roastExcerpt) h += '<div class="event-roast">' + esc(e.roastExcerpt) + '</div>';
+        if (e.roastExcerpt) {
+          h += '<div class="event-roast' + (expanded ? '' : ' truncated') + '">' + esc(e.roastExcerpt) + '</div>';
+        }
+        if (hasAdvice) {
+          h += '<button class="event-expand" data-expand-idx="' + i + '">';
+          h += svgIcon(expanded ? 'chevronUp' : 'chevron');
+          h += '<span>' + (expanded ? 'Hide advice' : 'Show advice') + '</span>';
+          h += '</button>';
+          if (expanded) {
+            h += '<div class="event-advice">' + svgIcon('bulb') + '<span>' + esc(e.roastAdvice) + '</span></div>';
+          }
+        }
         h += '</li>';
       }
-      h += '</ul>';
+      h += '</ul></div>';
     }
     h += '</div></div>';
     return h;
@@ -843,14 +1091,14 @@ body {
     const collapsed = !!d.collapsed['achievements'];
     const unlockedCount = d.achievements.filter(a => a.unlocked).length;
     let h = '<div class="card">';
-    h += collapsibleHeader('achievements', '\\u{1F3C6}', 'Achievements', collapsed);
+    h += collapsibleHeader('achievements', 'trophy', 'Achievements', collapsed);
     h += '<div class="card-body ' + (collapsed ? 'collapsed' : '') + '" style="margin-top:36px">';
     h += '<div class="ach-count">' + unlockedCount + ' / ' + d.achievements.length + ' unlocked</div>';
     h += '<div class="achievement-grid">';
     const sorted = [...d.achievements].sort((a, b) => (b.unlocked ? 1 : 0) - (a.unlocked ? 1 : 0) || b.progress - a.progress);
     for (const a of sorted) {
       h += '<div class="achievement-row">';
-      h += '<div class="ach-icon ' + (a.unlocked ? 'unlocked' : '') + '">' + (a.unlocked ? '\\u{2713}' : '\\u{1F512}') + '</div>';
+      h += '<div class="ach-icon ' + (a.unlocked ? 'unlocked' : '') + '">' + svgIcon(a.unlocked ? 'check' : 'lock') + '</div>';
       h += '<div class="ach-info">';
       h += '<div class="ach-name ' + (a.unlocked ? '' : 'locked') + '">' + esc(a.name) + '</div>';
       h += '<div class="ach-desc">' + esc(a.description) + '</div>';
@@ -864,7 +1112,7 @@ body {
   function renderStats(d) {
     const collapsed = !!d.collapsed['stats'];
     let h = '<div class="card">';
-    h += collapsibleHeader('stats', '\\u{1F4CA}', 'Stats', collapsed);
+    h += collapsibleHeader('stats', 'chart', 'Stats', collapsed);
     h += '<div class="card-body ' + (collapsed ? 'collapsed' : '') + '" style="margin-top:36px">';
     h += '<div class="stat-grid">';
     const stats = [
@@ -889,7 +1137,7 @@ body {
   function renderActions(d) {
     const collapsed = !!d.collapsed['actions'];
     let h = '<div class="card">';
-    h += collapsibleHeader('actions', '\\u{26A1}', 'Actions', collapsed);
+    h += collapsibleHeader('actions', 'zap', 'Actions', collapsed);
     h += '<div class="card-body ' + (collapsed ? 'collapsed' : '') + '" style="margin-top:36px">';
     h += '<div class="action-grid">';
     h += '<button class="action-btn" data-cmd="gitgud.runDemo">Demo</button>';
@@ -903,13 +1151,28 @@ body {
   function renderSettings(d) {
     const collapsed = !!d.collapsed['settings'];
     let h = '<div class="card">';
-    h += collapsibleHeader('settings', '\\u{2699}\\u{FE0F}', 'AI Roast Settings', collapsed);
+    h += collapsibleHeader('settings', 'settings', 'AI Roast Settings', collapsed);
     h += '<div class="card-body ' + (collapsed ? 'collapsed' : '') + '" style="margin-top:36px">';
+
+    var PROVIDER_MODELS = {
+      ollama: ['deepseek-v4-flash:cloud','deepseek-v4-pro:cloud','kimi-k2.6:cloud','glm-5.1:cloud','gemma4:cloud','qwen3.5:cloud'],
+      gemini: ['gemini-2.5-flash','gemini-2.5-pro','gemini-2.5-flash-lite'],
+      claude: ['claude-opus-4-7','claude-sonnet-4-6','claude-haiku-4-5'],
+      openai: ['gpt-5','gpt-4o','gpt-4o-mini','o1-mini'],
+      xai: ['grok-4','grok-3','grok-3-mini']
+    };
+    var PROVIDER_LABEL = { ollama:'Ollama', gemini:'Gemini', claude:'Claude', openai:'ChatGPT', xai:'Grok' };
+
+    function modelOptions(provider, current) {
+      var opts = PROVIDER_MODELS[provider] || [];
+      return opts.map(function(m){ return '<option value="'+esc(m)+'"'+(m===current?' selected':'')+'>'+esc(m)+'</option>'; }).join('');
+    }
 
     h += '<div class="settings-field"><label class="settings-label">AI Provider</label>';
     h += '<select class="settings-select" id="cfg-provider">';
-    h += '<option value="ollama"' + (d.aiProvider === 'ollama' ? ' selected' : '') + '>Ollama</option>';
-    h += '<option value="gemini"' + (d.aiProvider === 'gemini' ? ' selected' : '') + '>Gemini</option>';
+    ['gemini','claude','openai','xai','ollama'].forEach(function(p){
+      h += '<option value="'+p+'"'+(d.aiProvider===p?' selected':'')+'>'+PROVIDER_LABEL[p]+'</option>';
+    });
     h += '</select></div>';
 
     h += '<div class="settings-field"><label class="settings-label">Commit Message Style</label>';
@@ -918,28 +1181,48 @@ body {
     h += '<option value="savage"' + (d.commitMessageStyle === 'savage' ? ' selected' : '') + '>Savage (toxic-coach)</option>';
     h += '</select></div>';
 
-    h += '<div class="settings-field"><label class="settings-label">Ollama API Key</label>';
-    h += '<input class="settings-input" type="password" id="cfg-apikey" value="' + esc(d.ollamaApiKey) + '" placeholder="Enter Ollama API key..." /></div>';
+    // Hidden inputs preserve unselected providers' keys/models so they survive save round-trips.
+    var hidden = [
+      ['cfg-ollama-key', d.ollamaApiKey],
+      ['cfg-ollama-model', d.ollamaModel],
+      ['cfg-ollama-baseurl', d.ollamaBaseUrl],
+      ['cfg-gemini-key', d.geminiApiKey],
+      ['cfg-gemini-model', d.geminiModel],
+      ['cfg-claude-key', d.claudeApiKey],
+      ['cfg-claude-model', d.claudeModel],
+      ['cfg-openai-key', d.openaiApiKey],
+      ['cfg-openai-model', d.openaiModel],
+      ['cfg-xai-key', d.xaiApiKey],
+      ['cfg-xai-model', d.xaiModel]
+    ];
+    hidden.forEach(function(pair){
+      h += '<input type="hidden" id="'+pair[0]+'" value="'+esc(pair[1] || '')+'" />';
+    });
 
-    h += '<div class="settings-field"><label class="settings-label">Ollama Model</label>';
-    h += '<input class="settings-input" type="text" id="cfg-model" value="' + esc(d.ollamaModel) + '" placeholder="deepseek-v4-flash:cloud" />';
-    h += '<div class="settings-hint">Leave blank for default</div></div>';
+    // Active-provider visible fields
+    var p = d.aiProvider;
+    var keyVal = d[p+'ApiKey'] || '';
+    var modelVal = d[p+'Model'] || '';
+    h += '<div class="settings-field"><label class="settings-label">'+PROVIDER_LABEL[p]+' API Key</label>';
+    h += '<input class="settings-input" type="password" id="cfg-active-key" value="' + esc(keyVal) + '" placeholder="Enter '+PROVIDER_LABEL[p]+' API key..." /></div>';
 
-    h += '<div class="settings-field"><label class="settings-label">Ollama Base URL</label>';
-    h += '<input class="settings-input" type="text" id="cfg-baseurl" value="' + esc(d.ollamaBaseUrl) + '" placeholder="https://ollama.com/v1" />';
-    h += '<div class="settings-hint">Leave blank for default</div></div>';
+    h += '<div class="settings-field"><label class="settings-label">'+PROVIDER_LABEL[p]+' Model</label>';
+    h += '<select class="settings-select" id="cfg-active-model">' + modelOptions(p, modelVal) + '</select></div>';
 
-    h += '<div class="settings-field"><label class="settings-label">Gemini API Key</label>';
-    h += '<input class="settings-input" type="password" id="cfg-gemini-key" value="' + esc(d.geminiApiKey) + '" placeholder="Enter Gemini API key..." /></div>';
+    if (p === 'ollama') {
+      h += '<div class="settings-field"><label class="settings-label">Ollama Base URL</label>';
+      h += '<input class="settings-input" type="text" id="cfg-active-baseurl" value="' + esc(d.ollamaBaseUrl) + '" placeholder="https://ollama.com/v1" />';
+      h += '<div class="settings-hint">Leave blank for default</div></div>';
+    }
 
     h += '<div style="display:flex;align-items:center">';
     h += '<button class="settings-save" id="settings-save">Save</button>';
     h += '<span class="settings-saved" id="settings-saved">Saved!</span>';
     h += '</div>';
 
-    const hasKey = (d.aiProvider === 'gemini' && d.geminiApiKey.length > 0) || (d.aiProvider === 'ollama' && d.ollamaApiKey.length > 0);
+    var hasKey = !!keyVal;
     h += '<div class="settings-status ' + (hasKey ? 'connected' : 'disconnected') + '">';
-    h += hasKey ? '\\u{2705} AI roasts enabled (' + esc(d.aiProvider) + ')' : '\\u{26A0}\\u{FE0F} No API key — using template roasts';
+    h += hasKey ? '<span class="status-icon">' + svgIcon('check') + '</span>AI roasts enabled (' + esc(PROVIDER_LABEL[p]) + ')' : '<span class="status-icon">' + svgIcon('warn') + '</span>No API key — using template roasts';
     h += '</div>';
     h += '</div></div>';
     return h;
@@ -974,11 +1257,24 @@ body {
       });
     });
 
-    // Roast history toggle
-    const roastToggle = document.getElementById('roast-history-toggle');
-    if (roastToggle) roastToggle.addEventListener('click', () => {
-      roastHistoryExpanded = !roastHistoryExpanded;
-      render(state);
+    // Event row expand toggles
+    document.querySelectorAll('[data-expand-idx]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const idx = e.currentTarget.getAttribute('data-expand-idx');
+        eventExpanded[idx] = !eventExpanded[idx];
+        if (state) render(state);
+      });
+    });
+    document.querySelectorAll('[data-event-idx]').forEach(row => {
+      row.addEventListener('click', e => {
+        if (e.target.closest('[data-expand-idx]')) return;
+        const idx = row.getAttribute('data-event-idx');
+        const ev = state && state.eventHistory[idx];
+        if (!ev || !ev.roastAdvice) return;
+        eventExpanded[idx] = !eventExpanded[idx];
+        if (state) render(state);
+      });
     });
 
     // Action buttons
@@ -1064,17 +1360,47 @@ body {
     const saveBtn = document.getElementById('settings-save');
     if (saveBtn) saveBtn.addEventListener('click', () => {
       const v = id => (document.getElementById(id) || {}).value || '';
+      const provider = v('cfg-provider') || 'gemini';
+      // Fold the active visible inputs into the right per-provider hidden buckets.
+      const activeKey = v('cfg-active-key');
+      const activeModel = v('cfg-active-model');
+      const activeBase = v('cfg-active-baseurl');
+      const buckets = {
+        ollama: { key: v('cfg-ollama-key'), model: v('cfg-ollama-model'), base: v('cfg-ollama-baseurl') },
+        gemini: { key: v('cfg-gemini-key'), model: v('cfg-gemini-model') },
+        claude: { key: v('cfg-claude-key'), model: v('cfg-claude-model') },
+        openai: { key: v('cfg-openai-key'), model: v('cfg-openai-model') },
+        xai: { key: v('cfg-xai-key'), model: v('cfg-xai-model') },
+      };
+      if (buckets[provider]) {
+        buckets[provider].key = activeKey;
+        buckets[provider].model = activeModel;
+        if (provider === 'ollama') buckets.ollama.base = activeBase;
+      }
       vscode.postMessage({
         type: 'saveSettings',
-        aiProvider: v('cfg-provider'),
-        ollamaApiKey: v('cfg-apikey'),
-        ollamaModel: v('cfg-model'),
-        ollamaBaseUrl: v('cfg-baseurl'),
-        geminiApiKey: v('cfg-gemini-key'),
+        aiProvider: provider,
+        ollamaApiKey: buckets.ollama.key,
+        ollamaModel: buckets.ollama.model,
+        ollamaBaseUrl: buckets.ollama.base,
+        geminiApiKey: buckets.gemini.key,
+        geminiModel: buckets.gemini.model,
+        claudeApiKey: buckets.claude.key,
+        claudeModel: buckets.claude.model,
+        openaiApiKey: buckets.openai.key,
+        openaiModel: buckets.openai.model,
+        xaiApiKey: buckets.xai.key,
+        xaiModel: buckets.xai.model,
         commitMessageStyle: v('cfg-commit-style'),
       });
       const saved = document.getElementById('settings-saved');
       if (saved) { saved.classList.add('show'); setTimeout(() => saved.classList.remove('show'), 2000); }
+    });
+
+    // Auto-save the provider change so the visible API-key / model fields swap immediately.
+    const provSel = document.getElementById('cfg-provider');
+    if (provSel) provSel.addEventListener('change', () => {
+      if (saveBtn) saveBtn.click();
     });
   }
 

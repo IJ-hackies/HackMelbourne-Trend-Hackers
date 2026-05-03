@@ -1,6 +1,16 @@
 import type { Roast, GitEvent, ReactionImageEntry } from '../types';
 import type { AnyVerdict } from '../analysis/types';
-import { pickMemePool } from '../memes';
+import { DEFAULT_MODELS } from './models';
+import {
+  detectSixSeven,
+  buildRoastSystemPrompt,
+  buildHypeSystemPrompt,
+  buildUserPrompt,
+  buildMultiVerdictPrompt,
+  buildHypeUserPrompt,
+  parseRoastResponse,
+  parseHypeResponse,
+} from './prompt-shared';
 
 export interface OllamaConfig {
   apiKey: string;
@@ -8,7 +18,6 @@ export interface OllamaConfig {
   baseUrl?: string;
 }
 
-const DEFAULT_MODEL = 'deepseek-v4-flash:cloud';
 const DEFAULT_BASE_URL = 'https://ollama.com/api';
 
 const SIX_SEVEN_RE = /\b(67|6-7|6\.7|six[\s-]?seven)\b/i;
@@ -143,13 +152,9 @@ async function callOllama(
   const url = `${baseUrl}/chat`;
   const t0 = Date.now();
   console.log(`[GitGud] Ollama POST ${url} (model=${model})`);
-
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model,
       messages: [
@@ -160,34 +165,40 @@ async function callOllama(
       options: { temperature: 1.0 },
     }),
   });
-
   const tResponse = Date.now();
   console.log(`[GitGud] Ollama HTTP ${response.status} (network: ${tResponse - t0}ms)`);
-
   if (!response.ok) {
     const body = await response.text().catch(() => '');
     console.error(`[GitGud] Ollama error body: ${body.slice(0, 300)}`);
     throw new Error(`Ollama API error ${response.status}: ${body.slice(0, 100)}`);
   }
-
   const data = (await response.json()) as any;
-  const tParsed = Date.now();
-  console.log(`[GitGud] Ollama response parsed (parse: ${tParsed - tResponse}ms, total: ${tParsed - t0}ms)`);
-
-  // Native Ollama format: data.message.content
-  const content = data.message?.content
-    // OpenAI-compatible fallback: data.choices[0].message.content
-    ?? data.choices?.[0]?.message?.content;
-
+  const content = data.message?.content ?? data.choices?.[0]?.message?.content;
   if (!content) {
     console.error(`[GitGud] Ollama empty content. Full response: ${JSON.stringify(data).slice(0, 500)}`);
     throw new Error('Empty response from Ollama');
   }
-
-  console.log(`[GitGud] Ollama content: "${content.slice(0, 150)}"`);
   return content;
 }
 
+function resolved(config: OllamaConfig) {
+  return {
+    baseUrl: config.baseUrl ?? DEFAULT_BASE_URL,
+    model: config.model ?? DEFAULT_MODELS.ollama,
+  };
+}
+
+export async function generateOllamaCombinedRoast(verdicts: AnyVerdict[], config: OllamaConfig, event?: GitEvent): Promise<Roast> {
+  const { baseUrl, model } = resolved(config);
+  const content = await callOllama(baseUrl, model, config.apiKey, buildRoastSystemPrompt(detectSixSeven(event), verdicts), buildMultiVerdictPrompt(verdicts, event));
+  return parseRoastResponse(content);
+}
+
+export async function generateOllamaRoast(verdict: AnyVerdict, config: OllamaConfig, event?: GitEvent): Promise<Roast> {
+  const { baseUrl, model } = resolved(config);
+  const content = await callOllama(baseUrl, model, config.apiKey, buildRoastSystemPrompt(detectSixSeven(event), [verdict]), buildUserPrompt(verdict, event));
+  return parseRoastResponse(content);
+}
 export async function generateOllamaCombinedRoast(
   verdicts: AnyVerdict[],
   config: OllamaConfig,
@@ -227,7 +238,8 @@ export async function generateOllamaRoast(
     buildUserPrompt(verdict, event),
   );
 
-  const result = parseResponse(content);
-  if (!result) throw new Error('Failed to parse roast response');
-  return result;
+export async function generateOllamaHype(verdicts: AnyVerdict[], config: OllamaConfig, event?: GitEvent): Promise<Roast> {
+  const { baseUrl, model } = resolved(config);
+  const content = await callOllama(baseUrl, model, config.apiKey, buildHypeSystemPrompt(detectSixSeven(event)), buildHypeUserPrompt(verdicts, event));
+  return parseHypeResponse(content);
 }

@@ -18,6 +18,7 @@ export interface StoredEvent {
   type: string;
   timestamp: number;
   roastExcerpt: string;
+  roastAdvice?: string;
   severity: string;
   scoreDelta: number;
   reactionImage?: string;
@@ -77,6 +78,9 @@ export class StateManager {
     const storedEvent: StoredEvent = {
       type: event.type,
       timestamp: event.timestamp,
+      roastExcerpt: result.roasts[0]?.message ?? '',
+      roastAdvice: result.roasts[0]?.advice ?? '',
+      severity: result.analysis.highestSeverity,
       roastExcerpt: bestRoast?.message ?? '',
       severity: bestRoast?.severity ?? result.analysis.highestSeverity,
       scoreDelta: result.score.delta,
