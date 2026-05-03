@@ -15,9 +15,20 @@ function detectSixSeven(event?: GitEvent): boolean {
   return SIX_SEVEN_RE.test(haystack);
 }
 
+function sampleReactionImages(images: ReactionImageEntry[], count: number): ReactionImageEntry[] {
+  if (images.length <= count) return images;
+  const shuffled = [...images];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+}
+
 function buildReactionImageBlock(images?: ReactionImageEntry[]): string {
   if (!images || images.length === 0) return '';
-  const list = images.map(img => `- ${img.file}: "${img.description}" [moods: ${img.moods.join(', ')}] [severity: ${img.severity.join(', ')}]`).join('\n');
+  const pool = sampleReactionImages(images, 8);
+  const list = pool.map(img => `- ${img.file}: "${img.description}" [moods: ${img.moods.join(', ')}] [severity: ${img.severity.join(', ')}]`).join('\n');
   return `\n\nREACTION IMAGES (pick the one that best matches your roast's vibe and severity):
 ${list}
 
