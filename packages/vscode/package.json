@@ -2,7 +2,7 @@
   "name": "git-gud-vscode",
   "displayName": "Git Gud Coach",
   "description": "Competitive Git coaching with esports-style roasts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "git-gud",
   "license": "MIT",
   "icon": "icon.png",
@@ -23,8 +23,7 @@
     "gamification",
     "productivity",
     "roasts",
-    "esports",
-    "leaderboard"
+    "esports"
   ],
   "categories": [
     "Other",
