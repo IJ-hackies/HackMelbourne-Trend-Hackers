@@ -561,10 +561,13 @@ body {
   </div>
 </div>
 
+<audio id="fahhh-audio" src="${fahhhUri}" preload="auto"></audio>
+
 <script nonce="${nonce}">
 (function() {
   const vscode = acquireVsCodeApi();
   const root = document.getElementById('root');
+  const fahhhAudio = document.getElementById('fahhh-audio');
 
   const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#00d2ff' };
   const EVENT_ICONS = {
@@ -797,6 +800,11 @@ body {
     h += '<button class="action-btn" data-cmd="gitgud.exportRankCard">Rank Card</button>';
     h += '<button class="action-btn" data-cmd="gitgud.weeklyReport">Report</button>';
     h += '<button class="action-btn danger" data-cmd="gitgud.resetStats">Reset</button>';
+    h += '</div>';
+    // Sound toggle
+    h += '<div style="margin-top:10px;display:flex;align-items:center;gap:6px;">';
+    h += '<button class="action-btn" data-cmd="gitgud.toggleSound" style="font-size:10px;padding:5px 8px;">' + (d.soundEnabled ? '\u{1F507} Disable Sounds' : '\u{1F50A} Enable Sounds') + '</button>';
+    h += '</div>';
     h += '</div></div></div>';
     return h;
   }
@@ -1016,6 +1024,26 @@ body {
             g.gain.setValueAtTime(0.12, ctx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
             o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.5);
+          });
+          break;
+        }
+        case 'fahhh': {
+          if (fahhhAudio) {
+            fahhhAudio.currentTime = 0;
+            fahhhAudio.play().catch(() => {});
+          }
+          break;
+        }
+        case 'dayum': {
+          const now = ctx.currentTime;
+          const freqs = [523.25, 783.99]; // C5 + G5
+          freqs.forEach((f, i) => {
+            const o = ctx.createOscillator(); const g = ctx.createGain();
+            o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+            g.gain.setValueAtTime(0, now + i * 0.15);
+            g.gain.linearRampToValueAtTime(0.25, now + i * 0.15 + 0.05);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.6);
+            o.start(now + i * 0.15); o.stop(now + i * 0.15 + 0.6);
           });
           break;
         }
