@@ -55,6 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
         ollamaBaseUrl: config.ollamaBaseUrl,
         geminiApiKey: config.geminiApiKey,
         commitMessageStyle: config.commitMessageStyle,
+        soundEnabled: config.soundEnabled,
       },
       sourceControl.snapshot(),
       getCollapsed(),
@@ -170,23 +171,48 @@ export function activate(context: vscode.ExtensionContext) {
         a => a.unlocked && !playerState.unlockedAchievements.has(a.id),
       );
 
-      const SILENT = new Set(['conflict-block-preview', 'file-fully-resolved']);
-      if (!SILENT.has(event.type)) {
-        if (config.voiceEnabled) {
-          const savage = result.roasts.find((r) => r.severity === 'savage');
-          if (savage) {
-            sidebarProvider.postMessage({ type: 'speakRoast', text: savage.message });
-          } else if (result.rankEvaluation.promoted) {
-            sidebarProvider.postMessage({
-              type: 'speakRoast',
-              text: `Rank up! You are now ${result.rankEvaluation.rank.name}.`,
-            });
-          } else if (result.rankEvaluation.demoted && result.rankEvaluation.previousRank) {
-            sidebarProvider.postMessage({
-              type: 'speakRoast',
-              text: `Demoted to ${result.rankEvaluation.rank.name}. Do better.`,
-            });
-          }
+    const SILENT = new Set(['conflict-block-preview', 'file-fully-resolved']);
+    if (!SILENT.has(event.type)) {
+      // Sound effects
+      if (config.soundEnabled) {
+        const highest = result.analysis.highestSeverity;
+        const evType = event.type;
+        const hasNewAchievements = newAchievements.length > 0;
+        const { promoted, demoted } = result.rankEvaluation;
+
+        // Priority: rank change > achievement > event severity
+        if (promoted) {
+          sidebarProvider.playSound('rank-up');
+        } else if (demoted) {
+          sidebarProvider.playSound('rank-down');
+        } else if (hasNewAchievements) {
+          sidebarProvider.playSound('achievement');
+        } else if (highest === 'critical') {
+          sidebarProvider.playSound('fahhh');
+        } else if (highest === 'warning') {
+          sidebarProvider.playSound('fahhh');
+        } else if (highest === 'info') {
+          // Good/clean commits
+          sidebarProvider.playSound('dayum');
+        } else {
+          sidebarProvider.playSound('event');
+        }
+      }
+
+      if (config.voiceEnabled) {
+        const savage = result.roasts.find((r) => r.severity === 'savage');
+        if (savage) {
+          sidebarProvider.postMessage({ type: 'speakRoast', text: savage.message });
+        } else if (result.rankEvaluation.promoted) {
+          sidebarProvider.postMessage({
+            type: 'speakRoast',
+            text: `Rank up! You are now ${result.rankEvaluation.rank.name}.`,
+          });
+        } else if (result.rankEvaluation.demoted && result.rankEvaluation.previousRank) {
+          sidebarProvider.postMessage({
+            type: 'speakRoast',
+            text: `Demoted to ${result.rankEvaluation.rank.name}. Do better.`,
+          });
         }
         await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements, result.combinedRoast);
       }
@@ -241,6 +267,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
         vscode.window.showInformationMessage('Git Gud: API key saved.');
       }
+    }),
+    vscode.commands.registerCommand('gitgud.toggleSound', async () => {
+      const cfg = vscode.workspace.getConfiguration('gitgud');
+      const current = cfg.get<boolean>('soundEnabled', true);
+      await cfg.update('soundEnabled', !current, true);
+      vscode.window.showInformationMessage(`Git Gud sounds ${!current ? 'enabled' : 'disabled'}.`);
+      config = getConfig();
+      refreshSidebar();
     }),
     vscode.commands.registerCommand('gitgud.shareToTeam', async () => {
       const cfg = vscode.workspace.getConfiguration('gitgud');
