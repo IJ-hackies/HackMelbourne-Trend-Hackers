@@ -68,11 +68,16 @@ export class StateManager {
       unlockedAchievements,
     };
 
+    const SEVERITY_RANK: Record<string, number> = { savage: 3, medium: 2, mild: 1 };
+    const bestRoast = [...result.roasts].sort(
+      (a, b) => (SEVERITY_RANK[b.severity] ?? 0) - (SEVERITY_RANK[a.severity] ?? 0),
+    )[0];
+
     const storedEvent: StoredEvent = {
       type: event.type,
       timestamp: event.timestamp,
-      roastExcerpt: result.roasts[0]?.message ?? '',
-      severity: result.analysis.highestSeverity,
+      roastExcerpt: bestRoast?.message ?? '',
+      severity: bestRoast?.severity ?? result.analysis.highestSeverity,
       scoreDelta: result.score.delta,
     };
 
