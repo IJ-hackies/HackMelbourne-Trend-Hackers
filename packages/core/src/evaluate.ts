@@ -37,14 +37,12 @@ export async function evaluate(
   const analysis = analyzeEvent(event, context);
   console.log(`[GitGud] Analysis: ${Date.now() - t0}ms`);
 
-  // Templates for individual roasts (sidebar/history/voice), single AI call for the notification
   const tRoasts = Date.now();
-  const roasts = await generateRoasts(analysis.verdicts, undefined, event);
-  console.log(`[GitGud] Template roasts: ${Date.now() - tRoasts}ms`);
-
-  const tAI = Date.now();
-  const combinedRoast = await generateCombinedRoast(analysis.verdicts, roastConfig, event);
-  console.log(`[GitGud] Combined AI roast: ${Date.now() - tAI}ms`);
+  const [roasts, combinedRoast] = await Promise.all([
+    generateRoasts(analysis.verdicts, roastConfig, event),
+    generateCombinedRoast(analysis.verdicts, roastConfig, event),
+  ]);
+  console.log(`[GitGud] Roasts + combined AI: ${Date.now() - tRoasts}ms`);
 
   const score = calculateScore(analysis.verdicts, playerState.score);
 

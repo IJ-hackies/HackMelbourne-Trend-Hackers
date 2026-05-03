@@ -36,7 +36,11 @@ export async function showRoastNotifications(
 
   const intensity = config.get<string>('roastIntensity', 'savage') ?? 'savage';
 
-  const roast = combinedRoast ?? roasts[0];
+  const SEVERITY_RANK: Record<string, number> = { savage: 3, medium: 2, mild: 1 };
+  const bestIndividual = [...roasts].sort(
+    (a, b) => (SEVERITY_RANK[b.severity] ?? 0) - (SEVERITY_RANK[a.severity] ?? 0),
+  )[0];
+  const roast = bestIndividual ?? combinedRoast;
   if (roast) {
     const effectiveSeverity = adjustSeverity(roast.severity, intensity);
     const prefix = randomPick(SLANG_PREFIXES[effectiveSeverity] ?? SLANG_PREFIXES.mild);
