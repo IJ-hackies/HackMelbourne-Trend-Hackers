@@ -23,7 +23,7 @@ Monorepo with three workspaces:
 
 The **sidebar** is the canonical user surface. New user-facing features should add a button to the sidebar's Actions card and back it with a registered command. The command palette is a fallback, not the primary path.
 
-Sidebar card order (top → bottom): **Rank → Source Control → Personality → Recent Offenses → Achievements → Stats → Actions → Settings**. Rank and Personality are non-collapsible; every other card is collapsible with an animated chevron header, and per-card collapse state persists in `globalState` under the key `gitgud.collapsedSections`.
+Sidebar card order (top → bottom): **Latest Roast → Rank → Personality → Source Control → Recent Offenses → Achievements → Stats → Actions → Settings**. Latest Roast, Rank, and Personality are non-collapsible; every other card is collapsible with an animated chevron header (collapsed by default), and per-card collapse state persists in `globalState` under the key `gitgud.collapsedSections`.
 
 AI roasts: Ollama is the default (`deepseek-v4-flash:cloud` on `https://ollama.com/api`); Gemini is configurable via the sidebar settings. When neither is reachable, the extension falls back to a static template library. Roasts are generated in parallel (individual per-verdict + combined) for speed.
 
