@@ -15,6 +15,7 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
+      - run: npm run build -w packages/core
       - run: npm run build -w packages/vscode
       - name: Publish to Marketplace
         working-directory: packages/vscode
