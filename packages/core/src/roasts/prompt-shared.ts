@@ -1,4 +1,4 @@
-import type { Roast, GitEvent } from '../types';
+import type { Roast, GitEvent, ReactionImageEntry } from '../types';
 import type { AnyVerdict } from '../analysis/types';
 import { pickMemePoolForVerdicts, formatMemePoolForPrompt, formatHypeVocabForPrompt } from '../memes';
 
@@ -11,7 +11,35 @@ export function detectSixSeven(event?: GitEvent): boolean {
   return SIX_SEVEN_RE.test(haystack);
 }
 
-export function buildRoastSystemPrompt(sixSevenTriggered: boolean, verdicts: AnyVerdict[]): string {
+function shuffle<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildReactionImageBlock(images?: ReactionImageEntry[]): string {
+  if (!images || images.length === 0) return '';
+  const pool = images.length <= 8 ? images : shuffle(images).slice(0, 8);
+  const list = pool.map(img => `- ${img.file}: "${img.description}" [moods: ${img.moods.join(', ')}] [severity: ${img.severity.join(', ')}]`).join('\n');
+  return `\n\nREACTION IMAGES (pick the one that best matches your roast's vibe and severity):
+${list}
+
+You MUST include an IMAGE line in your response with the exact filename of your chosen image.`;
+}
+
+function imageFormatLine(images?: ReactionImageEntry[]): string {
+  if (!images || images.length === 0) return '';
+  return '\nIMAGE: <exact filename of the chosen reaction image, or NONE if no images available>';
+}
+
+export function buildRoastSystemPrompt(
+  sixSevenTriggered: boolean,
+  verdicts: AnyVerdict[],
+  reactionImages?: ReactionImageEntry[],
+): string {
   const picked = pickMemePoolForVerdicts(verdicts);
   const poolBlock = formatMemePoolForPrompt(picked);
 
@@ -35,14 +63,17 @@ ANTI-TEMPLATE RULES (CRITICAL — break the formula):
 - VARY STRUCTURE — open with a verb sometimes, a question sometimes, a meme phrase sometimes, an observation sometimes. Do not anchor every roast on a labeled opener.
 - VARY OPENERS — never start with "Bro,". Rotate: caster yelling, deadpan observation, rhetorical question, accusation, mock-confused, mock-impressed.
 
-STRICT FORMAT:
+STRICT FORMAT (ALL THREE FIELDS ARE REQUIRED — never leave any blank):
 ROAST: <free-form, see length/structure rules above>
-ADVICE: <one short sentence, max 20 words>
+ADVICE: <one short sentence of genuine, non-meme git advice, max 20 words. NEVER leave this blank. NEVER repeat the roast. NEVER use the word "IMAGE" here.>${imageFormatLine(reactionImages)}
 
-No markdown, no emojis, no quotes, no extra lines. Be punchy.`;
+No markdown, no emojis, no quotes, no extra lines. Be punchy.${buildReactionImageBlock(reactionImages)}`;
 }
 
-export function buildHypeSystemPrompt(sixSevenTriggered: boolean): string {
+export function buildHypeSystemPrompt(
+  sixSevenTriggered: boolean,
+  reactionImages?: ReactionImageEntry[],
+): string {
   const vocabLine = formatHypeVocabForPrompt(10);
   const sixSevenDirective = sixSevenTriggered
     ? `\n\n!! SIX-SEVEN ALERT !!\nThe number 67 was detected in the Git context. You MUST reference the "six seven" / "6-7" meme in your hype line (origin: Skrilla "Doot Doot 6 7", LaMelo Ball, brainrot-kid chant). Drop "six seven" or "6-7" naturally — mandatory.\n`
@@ -60,11 +91,11 @@ ANTI-TEMPLATE RULES (CRITICAL):
 - VARY OPENERS — never start with "Bro," or "Bruh,". Rotate: caster shouting, deadpan approval, mock-shock that they did something right, gigachad acknowledgment, anime power-up reference.
 - BE GENUINELY POSITIVE — celebratory, not backhanded. No "for once", no "shocked you didn't break it". Pure W energy.
 
-STRICT FORMAT:
+STRICT FORMAT (ALL FIELDS ARE REQUIRED — never leave any blank):
 HYPE: <celebration line, see length/structure rules above>
-ADVICE: <one short encouragement, max 20 words>
+ADVICE: <one short genuine encouragement, max 20 words. NEVER leave this blank. NEVER use the word "IMAGE" here.>${imageFormatLine(reactionImages)}
 
-No markdown, no emojis, no quotes, no extra lines.`;
+No markdown, no emojis, no quotes, no extra lines.${buildReactionImageBlock(reactionImages)}`;
 }
 
 export function formatEventContext(event?: GitEvent): string {
@@ -104,6 +135,33 @@ export function buildHypeUserPrompt(verdicts: AnyVerdict[], event?: GitEvent): s
   return prompt;
 }
 
+function stripImageTail(s: string): string {
+  // Drop any "IMAGE: ..." that leaked into the field (e.g. when the model emits
+  // ADVICE: IMAGE: file.jpg on a single line, or trailing IMAGE: in the advice text).
+  return s.replace(/\s*IMAGE:\s*\S+\s*$/i, '').trim();
+}
+
+const FALLBACK_ROAST_ADVICE = [
+  'Smaller commits, clearer messages, fewer regrets.',
+  'Branch first, panic later.',
+  'A real commit message takes ten extra seconds.',
+  'Pull before you push. Always.',
+  'Force-push only on branches no one else touches.',
+  "Run the tests before you tell git you're done.",
+  'Conventional Commits exists for a reason.',
+];
+
+const FALLBACK_HYPE_ADVICE = [
+  'Keep this exact energy.',
+  'Lock in. Run it back.',
+  'Protect the streak.',
+  'Ship the next one with the same vibe.',
+];
+
+function pickFallbackAdvice(pool: string[]): string {
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 export function stripEmDashTemplate(s: string): string {
   if (!s) return s;
   let out = s.replace(/^\s*([A-Za-z'!,]+(?:\s+[A-Za-z'!,]+){0,4})\s*[—–]\s*/u, '$1. ');
@@ -122,36 +180,58 @@ export function determineSeverity(roast: string): Roast['severity'] {
   return 'mild';
 }
 
+function extractImagePick(text: string): string | undefined {
+  const m = text.match(/IMAGE:\s*(.+?)$/im);
+  const v = m?.[1]?.trim() ?? '';
+  if (!v || v.toLowerCase() === 'none') return undefined;
+  return v;
+}
+
 export function parseRoastResponse(text: string): Roast {
-  const roastMatch = text.match(/ROAST:\s*(.+?)(?=\n|ADVICE:|$)/is);
-  const adviceMatch = text.match(/ADVICE:\s*(.+?)$/is);
+  const roastMatch = text.match(/ROAST:\s*(.*?)(?=\n|ADVICE:|IMAGE:|$)/is);
+  const adviceMatch = text.match(/ADVICE:\s*(.*?)(?=\n|IMAGE:|$)/is);
   let roast = roastMatch?.[1]?.trim() ?? '';
   let advice = adviceMatch?.[1]?.trim() ?? '';
   if (!roast) {
+    // Model omitted the ROAST: prefix — reconstruct from leading non-empty lines.
+    // Stop at any ADVICE:/IMAGE: line so we don't swallow them. Don't touch
+    // advice here — adviceMatch may have already captured it.
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    roast = lines[0] ?? text;
-    advice = lines.length > 1 ? lines[lines.length - 1] : '';
+    const roastLines: string[] = [];
+    for (const line of lines) {
+      if (/^(ADVICE|IMAGE):/i.test(line)) break;
+      roastLines.push(line);
+    }
+    roast = roastLines.join(' ') || text;
   }
-  roast = stripEmDashTemplate(roast);
-  advice = stripEmDashTemplate(advice);
+  roast = stripEmDashTemplate(stripImageTail(roast));
+  advice = stripEmDashTemplate(stripImageTail(advice));
   if (roast.length > 200) roast = roast.slice(0, 197) + '...';
   if (advice.length > 200) advice = advice.slice(0, 197) + '...';
-  return { message: roast, severity: determineSeverity(roast), advice };
+  if (!advice) advice = pickFallbackAdvice(FALLBACK_ROAST_ADVICE);
+  const reactionImage = extractImagePick(text);
+  return { message: roast, severity: determineSeverity(roast), advice, reactionImage };
 }
 
 export function parseHypeResponse(text: string): Roast {
-  const hypeMatch = text.match(/HYPE:\s*(.+?)(?=\n|ADVICE:|$)/is);
-  const adviceMatch = text.match(/ADVICE:\s*(.+?)$/is);
+  const hypeMatch = text.match(/HYPE:\s*(.*?)(?=\n|ADVICE:|IMAGE:|$)/is);
+  const adviceMatch = text.match(/ADVICE:\s*(.*?)(?=\n|IMAGE:|$)/is);
   let hype = hypeMatch?.[1]?.trim() ?? '';
   let advice = adviceMatch?.[1]?.trim() ?? '';
   if (!hype) {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    hype = lines[0] ?? text;
-    advice = lines.length > 1 ? lines[lines.length - 1] : '';
+    const hypeLines: string[] = [];
+    for (const line of lines) {
+      if (/^(ADVICE|IMAGE):/i.test(line)) break;
+      hypeLines.push(line);
+    }
+    hype = hypeLines.join(' ') || text;
   }
-  hype = stripEmDashTemplate(hype);
-  advice = stripEmDashTemplate(advice);
+  hype = stripEmDashTemplate(stripImageTail(hype));
+  advice = stripEmDashTemplate(stripImageTail(advice));
   if (hype.length > 200) hype = hype.slice(0, 197) + '...';
   if (advice.length > 200) advice = advice.slice(0, 197) + '...';
-  return { message: hype, severity: 'mild', advice };
+  if (!advice) advice = pickFallbackAdvice(FALLBACK_HYPE_ADVICE);
+  const reactionImage = extractImagePick(text);
+  return { message: hype, severity: 'mild', advice, reactionImage };
 }

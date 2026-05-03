@@ -221,8 +221,10 @@ export function activate(context: vscode.ExtensionContext) {
             text: `Demoted to ${result.rankEvaluation.rank.name}. Do better.`,
           });
         }
-        await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements, result.combinedRoast);
       }
+
+      await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements, result.combinedRoast);
+    }
 
       refreshSidebar();
     } catch (err) {

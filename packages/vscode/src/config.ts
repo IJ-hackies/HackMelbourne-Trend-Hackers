@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
-import type { RoastConfig, Provider } from '@git-gud/core';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { RoastConfig, ReactionImageEntry } from '@git-gud/core';
+import type { RoastConfig, Provider, ReactionImageEntry } from '@git-gud/core';
 
 export interface GitGudConfig {
   enabled: boolean;
@@ -45,18 +44,6 @@ export function getConfig(): GitGudConfig {
   };
 }
 
-export function getRoastConfig(config: GitGudConfig): RoastConfig | undefined {
-  const p = config.aiProvider;
-  console.log(`[GitGud] getRoastConfig: provider=${p}`);
-
-  if (p === 'gemini' && config.geminiApiKey) {
-    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey, model: config.geminiModel || undefined } };
-  }
-  if (p === 'claude' && config.claudeApiKey) {
-    return { provider: 'claude', claude: { apiKey: config.claudeApiKey, model: config.claudeModel || undefined } };
-  }
-  if (p === 'openai' && config.openaiApiKey) {
-    return { provider: 'openai', openai: { apiKey: config.openaiApiKey, model: config.openaiModel || undefined } };
 let cachedReactionImages: ReactionImageEntry[] | undefined;
 
 export function loadReactionImages(extensionPath: string): ReactionImageEntry[] {
@@ -68,35 +55,28 @@ export function loadReactionImages(extensionPath: string): ReactionImageEntry[] 
   } catch {
     cachedReactionImages = [];
   }
-  return cachedReactionImages;
+  return cachedReactionImages!;
 }
 
 export function getRoastConfig(config: GitGudConfig, extensionPath?: string): RoastConfig | undefined {
-  console.log(`[GitGud] getRoastConfig: provider=${config.aiProvider}, ollamaKey=${config.ollamaApiKey ? 'SET(' + config.ollamaApiKey.slice(0, 4) + '...)' : 'EMPTY'}, geminiKey=${config.geminiApiKey ? 'SET(' + config.geminiApiKey.slice(0, 4) + '...)' : 'EMPTY'}`);
+  const p = config.aiProvider;
+  console.log(`[GitGud] getRoastConfig: provider=${p}`);
+  const reactionImages = extensionPath ? loadReactionImages(extensionPath) : undefined;
 
-  const reactionImages = extensionPath ? loadReactionImages(extensionPath) : [];
-
-  if (config.aiProvider === 'gemini' && config.geminiApiKey) {
-    console.log('[GitGud] Using Gemini provider');
-    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey }, reactionImages };
+  if (p === 'gemini' && config.geminiApiKey) {
+    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey, model: config.geminiModel || undefined }, reactionImages };
   }
-  if (config.ollamaApiKey) {
-    console.log(`[GitGud] Using Ollama provider (model=${config.ollamaModel || 'default'}, url=${config.ollamaBaseUrl || 'default'})`);
-    return {
-      provider: config.aiProvider,
-      ollama: { apiKey: config.ollamaApiKey, model: config.ollamaModel || undefined, baseUrl: config.ollamaBaseUrl || undefined },
-      reactionImages,
-    };
+  if (p === 'claude' && config.claudeApiKey) {
+    return { provider: 'claude', claude: { apiKey: config.claudeApiKey, model: config.claudeModel || undefined }, reactionImages };
   }
-  if (config.geminiApiKey) {
-    console.log('[GitGud] Falling back to Gemini provider');
-    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey }, reactionImages };
+  if (p === 'openai' && config.openaiApiKey) {
+    return { provider: 'openai', openai: { apiKey: config.openaiApiKey, model: config.openaiModel || undefined }, reactionImages };
   }
   if (p === 'xai' && config.xaiApiKey) {
-    return { provider: 'xai', xai: { apiKey: config.xaiApiKey, model: config.xaiModel || undefined } };
+    return { provider: 'xai', xai: { apiKey: config.xaiApiKey, model: config.xaiModel || undefined }, reactionImages };
   }
   if (p === 'ollama' && config.ollamaApiKey) {
-    return { provider: 'ollama', ollama: { apiKey: config.ollamaApiKey, model: config.ollamaModel || undefined, baseUrl: config.ollamaBaseUrl || undefined } };
+    return { provider: 'ollama', ollama: { apiKey: config.ollamaApiKey, model: config.ollamaModel || undefined, baseUrl: config.ollamaBaseUrl || undefined }, reactionImages };
   }
   console.log('[GitGud] No API key configured for selected provider — roasts will use templates only');
   return undefined;

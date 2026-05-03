@@ -1,4 +1,4 @@
-import type { Roast, GitEvent } from '../types';
+import type { Roast, GitEvent, ReactionImageEntry } from '../types';
 import type { AnyVerdict } from '../analysis/types';
 import { DEFAULT_MODELS } from './models';
 import {
@@ -31,7 +31,7 @@ async function callXai(model: string, apiKey: string, system: string, user: stri
         { role: 'user', content: user },
       ],
       temperature: 1.0,
-      max_tokens: 300,
+      max_tokens: 350,
     }),
   });
   if (!res.ok) {
@@ -44,20 +44,20 @@ async function callXai(model: string, apiKey: string, system: string, user: stri
   return text;
 }
 
-export async function generateXaiCombinedRoast(verdicts: AnyVerdict[], config: XaiConfig, event?: GitEvent): Promise<Roast> {
+export async function generateXaiCombinedRoast(verdicts: AnyVerdict[], config: XaiConfig, event?: GitEvent, reactionImages?: ReactionImageEntry[]): Promise<Roast> {
   const model = config.model ?? DEFAULT_MODELS.xai;
-  const content = await callXai(model, config.apiKey, buildRoastSystemPrompt(detectSixSeven(event), verdicts), buildMultiVerdictPrompt(verdicts, event));
+  const content = await callXai(model, config.apiKey, buildRoastSystemPrompt(detectSixSeven(event), verdicts, reactionImages), buildMultiVerdictPrompt(verdicts, event));
   return parseRoastResponse(content);
 }
 
-export async function generateXaiRoast(verdict: AnyVerdict, config: XaiConfig, event?: GitEvent): Promise<Roast> {
+export async function generateXaiRoast(verdict: AnyVerdict, config: XaiConfig, event?: GitEvent, reactionImages?: ReactionImageEntry[]): Promise<Roast> {
   const model = config.model ?? DEFAULT_MODELS.xai;
-  const content = await callXai(model, config.apiKey, buildRoastSystemPrompt(detectSixSeven(event), [verdict]), buildUserPrompt(verdict, event));
+  const content = await callXai(model, config.apiKey, buildRoastSystemPrompt(detectSixSeven(event), [verdict], reactionImages), buildUserPrompt(verdict, event));
   return parseRoastResponse(content);
 }
 
-export async function generateXaiHype(verdicts: AnyVerdict[], config: XaiConfig, event?: GitEvent): Promise<Roast> {
+export async function generateXaiHype(verdicts: AnyVerdict[], config: XaiConfig, event?: GitEvent, reactionImages?: ReactionImageEntry[]): Promise<Roast> {
   const model = config.model ?? DEFAULT_MODELS.xai;
-  const content = await callXai(model, config.apiKey, buildHypeSystemPrompt(detectSixSeven(event)), buildHypeUserPrompt(verdicts, event));
+  const content = await callXai(model, config.apiKey, buildHypeSystemPrompt(detectSixSeven(event), reactionImages), buildHypeUserPrompt(verdicts, event));
   return parseHypeResponse(content);
 }

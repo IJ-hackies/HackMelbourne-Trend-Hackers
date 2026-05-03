@@ -123,8 +123,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   buildSidebarData(
     playerState: PlayerState,
     eventHistory: StoredEvent[],
-    configFields: { aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: 'clean' | 'savage' },
-    configFields: { aiProvider: 'ollama' | 'gemini'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; commitMessageStyle: 'clean' | 'savage'; soundEnabled: boolean },
+    configFields: { aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: 'clean' | 'savage'; soundEnabled: boolean },
     sourceControl: SourceControlSnapshot,
     collapsed: Record<string, boolean>,
   ): SidebarData {
@@ -819,6 +818,7 @@ select option:checked, select option:hover {
 (function() {
   const vscode = acquireVsCodeApi();
   const root = document.getElementById('root');
+  const REACTIONS_BASE = "${reactionsBaseUri}";
 
   const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#c8ff00' };
 
@@ -887,7 +887,6 @@ select option:checked, select option:hover {
     '</div>';
   }
 
-  let roastHistoryExpanded = false;
 
   const SEVERITY_ICONS = { savage: '\\u{1F525}', medium: '\\u{26A0}\\u{FE0F}', mild: '\\u{2139}\\u{FE0F}' };
   const SEVERITY_CLASSES = { savage: 'severity-savage', medium: 'severity-medium', mild: 'severity-mild' };
@@ -909,21 +908,6 @@ select option:checked, select option:hover {
       h += '<div class="latest-roast-time">' + timeAgo(latest.timestamp) + '</div>';
     } else {
       h += '<div class="latest-roast-empty">No roasts yet. Go do something questionable.</div>';
-    }
-    if (roasts.length > 1) {
-      h += '<button class="latest-roast-toggle" id="roast-history-toggle">' + (roastHistoryExpanded ? 'Hide history' : 'Show past roasts (' + (roasts.length - 1) + ')') + '</button>';
-      if (roastHistoryExpanded) {
-        h += '<ul class="roast-history-list">';
-        for (const r of roasts.slice(1, 10)) {
-          const rIcon = SEVERITY_ICONS[r.severity] || SEVERITY_ICONS.mild;
-          const rCls = SEVERITY_CLASSES[r.severity] || SEVERITY_CLASSES.mild;
-          h += '<li class="roast-history-item">';
-          h += '<span class="roast-history-text ' + rCls + '">' + rIcon + ' ' + esc(r.roastExcerpt) + '</span>';
-          h += '<span class="roast-history-time">' + timeAgo(r.timestamp) + '</span>';
-          h += '</li>';
-        }
-        h += '</ul>';
-      }
     }
     h += '</div>';
     return h;
@@ -1031,15 +1015,6 @@ select option:checked, select option:hover {
     h += '</div>';
 
     h += '</div></div>';
-    return h;
-  }
-
-  function renderPersonality(d) {
-    let h = '<div class="card">';
-    h += '<div class="card-title">' + svgIcon('brain') + 'Personality</div>';
-    h += '<div class="personality-type">' + esc(d.personality.type) + '</div>';
-    h += '<div class="personality-desc">' + esc(d.personality.description) + '</div>';
-    h += '</div>';
     return h;
   }
 
@@ -1231,9 +1206,8 @@ select option:checked, select option:hover {
   function render(d) {
     state = d;
     let html = '';
-    html += renderLatestRoast(d);
     html += renderRankCard(d);
-    html += renderPersonality(d);
+    html += renderLatestRoast(d);
     html += renderSourceControl(d);
     html += renderOffenses(d);
     html += renderAchievements(d);

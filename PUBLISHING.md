@@ -69,18 +69,21 @@ npx @vscode/vsce publish
 
 ## Landing site (GitHub Pages)
 
-The site in `site/` deploys automatically via `.github/workflows/pages.yml` on every push to `main` that touches `site/` or the workflow file.
+The site in `site/` deploys automatically via `.github/workflows/pages.yml` on every push to `main` that touches `site/` or the workflow file. Custom domain: `git-gud-extension.app` (configured via `site/CNAME` + name.com DNS + GitHub Pages settings).
 
 ### One-time setup (already done)
 
 - GitHub repo → **Settings → Pages → Source: GitHub Actions**
+- `site/CNAME` contains `git-gud-extension.app`
+- name.com DNS: 4 A records for `@` pointing to GitHub Pages IPs (185.199.108.153 / .109.153 / .110.153 / .111.153), CNAME for `www` → `ij-hackies.github.io.`
+- GitHub repo → **Settings → Pages → Custom domain**: `git-gud-extension.app`, **Enforce HTTPS** enabled
 
 ### Updating the site
 
 Edit `site/index.html` or `site/styles.css`, commit to `main`, push. Live at:
 
 ```
-https://ij-hackies.github.io/HackMelbourne-Trend-Hackers/
+https://git-gud-extension.app/
 ```
 
 within ~30 seconds.

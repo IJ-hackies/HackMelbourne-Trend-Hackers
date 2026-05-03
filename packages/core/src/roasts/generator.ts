@@ -20,34 +20,37 @@ export interface RoastConfig {
   claude?: ClaudeConfig;
   openai?: OpenaiConfig;
   xai?: XaiConfig;
+  reactionImages?: ReactionImageEntry[];
 }
 
 function dispatchSingle(verdict: AnyVerdict, config: RoastConfig, event?: GitEvent): Promise<Roast> | null {
-  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiRoast(verdict, config.gemini, event);
-  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaRoast(verdict, config.ollama, event);
-  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeRoast(verdict, config.claude, event);
-  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiRoast(verdict, config.openai, event);
-  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiRoast(verdict, config.xai, event);
+  const ri = config.reactionImages;
+  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiRoast(verdict, config.gemini, event, ri);
+  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaRoast(verdict, config.ollama, event, ri);
+  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeRoast(verdict, config.claude, event, ri);
+  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiRoast(verdict, config.openai, event, ri);
+  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiRoast(verdict, config.xai, event, ri);
   return null;
 }
 
 function dispatchCombined(verdicts: AnyVerdict[], config: RoastConfig, event?: GitEvent): Promise<Roast> | null {
-  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiCombinedRoast(verdicts, config.gemini, event);
-  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaCombinedRoast(verdicts, config.ollama, event);
-  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeCombinedRoast(verdicts, config.claude, event);
-  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiCombinedRoast(verdicts, config.openai, event);
-  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiCombinedRoast(verdicts, config.xai, event);
+  const ri = config.reactionImages;
+  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiCombinedRoast(verdicts, config.gemini, event, ri);
+  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaCombinedRoast(verdicts, config.ollama, event, ri);
+  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeCombinedRoast(verdicts, config.claude, event, ri);
+  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiCombinedRoast(verdicts, config.openai, event, ri);
+  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiCombinedRoast(verdicts, config.xai, event, ri);
   return null;
 }
 
 function dispatchHype(verdicts: AnyVerdict[], config: RoastConfig, event?: GitEvent): Promise<Roast> | null {
-  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiHype(verdicts, config.gemini, event);
-  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaHype(verdicts, config.ollama, event);
-  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeHype(verdicts, config.claude, event);
-  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiHype(verdicts, config.openai, event);
-  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiHype(verdicts, config.xai, event);
+  const ri = config.reactionImages;
+  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiHype(verdicts, config.gemini, event, ri);
+  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaHype(verdicts, config.ollama, event, ri);
+  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeHype(verdicts, config.claude, event, ri);
+  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiHype(verdicts, config.openai, event, ri);
+  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiHype(verdicts, config.xai, event, ri);
   return null;
-  reactionImages?: ReactionImageEntry[];
 }
 
 /**

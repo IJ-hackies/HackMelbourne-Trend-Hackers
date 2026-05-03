@@ -78,10 +78,8 @@ export class StateManager {
     const storedEvent: StoredEvent = {
       type: event.type,
       timestamp: event.timestamp,
-      roastExcerpt: result.roasts[0]?.message ?? '',
-      roastAdvice: result.roasts[0]?.advice ?? '',
-      severity: result.analysis.highestSeverity,
       roastExcerpt: bestRoast?.message ?? '',
+      roastAdvice: bestRoast?.advice ?? '',
       severity: bestRoast?.severity ?? result.analysis.highestSeverity,
       scoreDelta: result.score.delta,
       reactionImage: bestRoast?.reactionImage,
