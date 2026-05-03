@@ -2,14 +2,51 @@ import type { Roast, GitEvent } from '../types';
 import type { AnyVerdict } from '../analysis/types';
 import type { OllamaConfig } from './ollama';
 import type { GeminiConfig } from './gemini';
+import type { ClaudeConfig } from './claude';
+import type { OpenaiConfig } from './openai';
+import type { XaiConfig } from './xai';
+import type { Provider } from './models';
 import { templates } from './templates';
-import { generateOllamaRoast, generateOllamaCombinedRoast } from './ollama';
-import { generateGeminiRoast, generateGeminiCombinedRoast } from './gemini';
+import { generateOllamaRoast, generateOllamaCombinedRoast, generateOllamaHype } from './ollama';
+import { generateGeminiRoast, generateGeminiCombinedRoast, generateGeminiHype } from './gemini';
+import { generateClaudeRoast, generateClaudeCombinedRoast, generateClaudeHype } from './claude';
+import { generateOpenaiRoast, generateOpenaiCombinedRoast, generateOpenaiHype } from './openai';
+import { generateXaiRoast, generateXaiCombinedRoast, generateXaiHype } from './xai';
 
 export interface RoastConfig {
-  provider: 'ollama' | 'gemini';
+  provider: Provider;
   ollama?: OllamaConfig;
   gemini?: GeminiConfig;
+  claude?: ClaudeConfig;
+  openai?: OpenaiConfig;
+  xai?: XaiConfig;
+}
+
+function dispatchSingle(verdict: AnyVerdict, config: RoastConfig, event?: GitEvent): Promise<Roast> | null {
+  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiRoast(verdict, config.gemini, event);
+  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaRoast(verdict, config.ollama, event);
+  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeRoast(verdict, config.claude, event);
+  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiRoast(verdict, config.openai, event);
+  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiRoast(verdict, config.xai, event);
+  return null;
+}
+
+function dispatchCombined(verdicts: AnyVerdict[], config: RoastConfig, event?: GitEvent): Promise<Roast> | null {
+  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiCombinedRoast(verdicts, config.gemini, event);
+  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaCombinedRoast(verdicts, config.ollama, event);
+  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeCombinedRoast(verdicts, config.claude, event);
+  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiCombinedRoast(verdicts, config.openai, event);
+  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiCombinedRoast(verdicts, config.xai, event);
+  return null;
+}
+
+function dispatchHype(verdicts: AnyVerdict[], config: RoastConfig, event?: GitEvent): Promise<Roast> | null {
+  if (config.provider === 'gemini' && config.gemini?.apiKey) return generateGeminiHype(verdicts, config.gemini, event);
+  if (config.provider === 'ollama' && config.ollama?.apiKey) return generateOllamaHype(verdicts, config.ollama, event);
+  if (config.provider === 'claude' && config.claude?.apiKey) return generateClaudeHype(verdicts, config.claude, event);
+  if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiHype(verdicts, config.openai, event);
+  if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiHype(verdicts, config.xai, event);
+  return null;
 }
 
 /**
@@ -65,18 +102,8 @@ export async function generateRoast(
 
   if (config) {
     try {
-      if (config.provider === 'gemini' && config.gemini?.apiKey) {
-        return await generateGeminiRoast(verdict, config.gemini, event);
-      }
-      if (config.provider === 'ollama' && config.ollama?.apiKey) {
-        return await generateOllamaRoast(verdict, config.ollama, event);
-      }
-      if (config.ollama?.apiKey) {
-        return await generateOllamaRoast(verdict, config.ollama, event);
-      }
-      if (config.gemini?.apiKey) {
-        return await generateGeminiRoast(verdict, config.gemini, event);
-      }
+      const dispatched = dispatchSingle(verdict, config, event);
+      if (dispatched) return await dispatched;
     } catch (err) {
       console.error(`[GitGud] Single roast AI call failed for ${verdict.category}/${verdict.pattern}:`, err);
       return generateTemplateRoast(verdict, event);
@@ -121,8 +148,8 @@ export async function generateCombinedRoast(
 ): Promise<Roast> {
   const nonClean = verdicts.filter(v => v.pattern !== 'clean');
   if (nonClean.length === 0) {
-    console.log('[GitGud] No non-clean verdicts, returning clean roast');
-    return { severity: 'mild', message: 'Clean action. Shocking.', advice: 'Keep it up.' };
+    console.log('[GitGud] All verdicts clean — generating hype');
+    return generateHype(verdicts, config, event);
   }
 
   console.log(`[GitGud] ${nonClean.length} verdict(s): ${nonClean.map(v => `${v.category}/${v.pattern}`).join(', ')}`);
@@ -132,29 +159,15 @@ export async function generateCombinedRoast(
   }
 
   if (config) {
-    console.log(`[GitGud] AI config: provider=${config.provider}, ollama.apiKey=${config.ollama?.apiKey ? 'SET' : 'EMPTY'}, gemini.apiKey=${config.gemini?.apiKey ? 'SET' : 'EMPTY'}`);
+    console.log(`[GitGud] AI config: provider=${config.provider}`);
     try {
-      if (config.provider === 'gemini' && config.gemini?.apiKey) {
-        console.log('[GitGud] Calling Gemini combined roast...');
-        const result = await generateGeminiCombinedRoast(nonClean, config.gemini, event);
-        console.log(`[GitGud] Gemini response: "${result.message}"`);
+      const dispatched = dispatchCombined(nonClean, config, event);
+      if (dispatched) {
+        const result = await dispatched;
+        console.log(`[GitGud] ${config.provider} combined response: "${result.message}"`);
         return result;
       }
-      if (config.provider === 'ollama' && config.ollama?.apiKey) {
-        console.log(`[GitGud] Calling Ollama combined roast (model=${config.ollama.model}, url=${config.ollama.baseUrl})...`);
-        const result = await generateOllamaCombinedRoast(nonClean, config.ollama, event);
-        console.log(`[GitGud] Ollama response: "${result.message}"`);
-        return result;
-      }
-      if (config.ollama?.apiKey) {
-        console.log('[GitGud] Falling back to Ollama (non-preferred provider)...');
-        return await generateOllamaCombinedRoast(nonClean, config.ollama, event);
-      }
-      if (config.gemini?.apiKey) {
-        console.log('[GitGud] Falling back to Gemini (non-preferred provider)...');
-        return await generateGeminiCombinedRoast(nonClean, config.gemini, event);
-      }
-      console.log('[GitGud] No API key configured for any provider, falling back to templates');
+      console.log('[GitGud] No API key configured for selected provider, falling back to templates');
     } catch (err) {
       console.error('[GitGud] AI roast failed, falling back to templates:', err);
     }
@@ -164,6 +177,41 @@ export async function generateCombinedRoast(
 
   const templateRoasts = nonClean.map(v => generateTemplateRoast(v, event));
   return combineTemplateRoasts(templateRoasts);
+}
+
+const HYPE_TEMPLATES: Roast[] = [
+  { severity: 'mild', message: 'Clean run, no notes. Goated behavior.', advice: 'Keep this exact energy.' },
+  { severity: 'mild', message: 'WHAT A PLAY. Healthy commit, no force-push, the crowd is shocked.', advice: 'Run it back.' },
+  { severity: 'mild', message: 'You ate that. No crumbs left on the diff.', advice: 'Lock in.' },
+  { severity: 'mild', message: 'Gigachad commit detected. Plot armor confirmed.', advice: 'Stay in your final form.' },
+  { severity: 'mild', message: 'W rizz on this one, no cap. Ultra instinct unlocked.', advice: 'Keep cooking.' },
+  { severity: 'mild', message: 'Shipped clean to prod. Sigma grindset confirmed.', advice: 'Protect the streak.' },
+  { severity: 'mild', message: 'Banger commit. This slaps.', advice: 'Encore.' },
+  { severity: 'mild', message: 'Understood the assignment. We are so back.', advice: 'Stay locked in.' },
+  { severity: 'mild', message: 'Clean Git? In this economy? Aura points awarded.', advice: 'Hold the line.' },
+  { severity: 'mild', message: 'INSANE outplay. The momentum just shifted.', advice: 'Keep the pressure on.' },
+  { severity: 'mild', message: 'Six-seven hands going up for this one.', advice: 'More of this please.' },
+  { severity: 'mild', message: 'Main character of the timeline behavior.', advice: 'Run it.' },
+];
+
+function pickHypeTemplate(): Roast {
+  return HYPE_TEMPLATES[Math.floor(Math.random() * HYPE_TEMPLATES.length)];
+}
+
+export async function generateHype(
+  verdicts: AnyVerdict[],
+  config?: RoastConfig,
+  event?: GitEvent,
+): Promise<Roast> {
+  if (config) {
+    try {
+      const dispatched = dispatchHype(verdicts, config, event);
+      if (dispatched) return await dispatched;
+    } catch (err) {
+      console.error('[GitGud] AI hype failed, falling back to templates:', err);
+    }
+  }
+  return pickHypeTemplate();
 }
 
 export async function generateRoasts(

@@ -1,0 +1,124 @@
+:root {
+  --bg: #0a0a0b;
+  --panel: #111114;
+  --ink: #ededee;
+  --mute: #8a8a92;
+  --line: #1f1f24;
+  --accent: #c8ff00;
+  --hot: #ff3d6a;
+  --mono: ui-monospace, "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-feature-settings: "ss01", "cv11";
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(1100px 600px at 80% -10%, rgba(200, 255, 0, 0.06), transparent 60%),
+    radial-gradient(800px 500px at -10% 20%, rgba(255, 61, 106, 0.05), transparent 60%);
+}
+
+a { color: inherit; text-decoration: none; }
+
+.nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 32px;
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0;
+  background: rgba(10,10,11,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.brand { display: flex; align-items: baseline; gap: 8px; font-family: var(--mono); }
+.brand-mark { color: var(--accent); transform: translateY(2px); }
+.brand-name { font-weight: 700; letter-spacing: -0.02em; }
+.nav nav a { margin-left: 22px; font-family: var(--mono); font-size: 13px; color: var(--mute); }
+.nav nav a:hover { color: var(--ink); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+
+.hero { padding: 88px 0 48px; }
+.kicker {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--mute); margin: 0 0 18px;
+}
+h1 {
+  font-size: clamp(44px, 7vw, 88px);
+  line-height: 0.98; letter-spacing: -0.04em;
+  font-weight: 800; margin: 0 0 24px;
+}
+.strike { color: var(--mute); text-decoration: line-through; text-decoration-color: var(--hot); text-decoration-thickness: 4px; }
+.accent { color: var(--accent); }
+.lede { max-width: 640px; font-size: 18px; color: #c4c4c8; }
+
+.cta-row { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 20px; border-radius: 8px;
+  font-family: var(--mono); font-size: 14px; font-weight: 600;
+  border: 1px solid var(--line); transition: transform 0.08s ease, background 0.15s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn.primary { background: var(--accent); color: #0a0a0b; border-color: var(--accent); }
+.btn.primary:hover { background: #d6ff3a; }
+.btn.ghost { color: var(--ink); }
+.btn.ghost:hover { background: var(--panel); }
+.btn .arrow { transition: transform 0.15s; }
+.btn:hover .arrow { transform: translateX(3px); }
+.footnote { font-family: var(--mono); font-size: 12px; color: var(--mute); margin-top: 18px; }
+.footnote a { color: var(--accent); }
+
+.ranks {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  padding: 24px 0 64px; font-family: var(--mono); font-size: 12px;
+}
+.rank {
+  padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--mute); text-transform: uppercase; letter-spacing: 0.1em;
+}
+.rank.glow { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 24px -8px var(--accent); }
+
+.features { padding: 64px 0; border-top: 1px solid var(--line); }
+.features h2, .install h2 {
+  font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.15em;
+  color: var(--mute); margin: 0 0 28px;
+}
+.grid {
+  display: grid; gap: 1px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  background: var(--line);
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+}
+.grid article { background: var(--panel); padding: 24px; }
+.grid h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -0.01em; }
+.grid p { margin: 0; color: #b6b6bc; font-size: 14.5px; }
+
+.install { padding: 64px 0 96px; border-top: 1px solid var(--line); }
+.install ol { padding-left: 20px; font-family: var(--mono); font-size: 14px; color: #c4c4c8; }
+.install li { margin: 6px 0; }
+.install code { background: var(--panel); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line); }
+.install kbd {
+  font-family: var(--mono); background: var(--panel);
+  border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 4px; padding: 1px 6px; font-size: 12px;
+}
+
+footer {
+  display: flex; justify-content: space-between;
+  padding: 24px 32px; border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 12px; color: var(--mute);
+}
+
+@media (max-width: 600px) {
+  .nav { padding: 16px 20px; }
+  .nav nav a { margin-left: 14px; }
+  main { padding: 0 20px; }
+  .hero { padding: 56px 0 32px; }
+  footer { flex-direction: column; gap: 8px; padding: 20px; }
+}

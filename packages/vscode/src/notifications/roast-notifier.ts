@@ -15,6 +15,25 @@ function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+/**
+ * Vary how the slang prefix attaches to the roast message so notifications don't
+ * all look like "<prefix> — <message>". Sometimes drops the prefix entirely.
+ */
+function composeRoastLine(prefix: string, message: string): string {
+  // 25% of the time, no prefix at all — the message stands on its own.
+  if (Math.random() < 0.25) return message;
+  const styles: Array<(p: string, m: string) => string> = [
+    (p, m) => `${p}. ${m}`,
+    (p, m) => `${p}... ${m}`,
+    (p, m) => `${p}, ${m.charAt(0).toLowerCase() + m.slice(1)}`,
+    (p, m) => `${p}: ${m}`,
+    (p, m) => `${p}! ${m}`,
+    (p, m) => `${p}? ${m}`,
+  ];
+  const style = styles[Math.floor(Math.random() * styles.length)];
+  return style(prefix, message);
+}
+
 /** Adjust severity based on the roastIntensity setting */
 function adjustSeverity(severity: string, intensity: string): string {
   if (intensity === 'mild' && severity === 'savage') return 'medium';
@@ -53,15 +72,16 @@ export async function showRoastNotifications(
         vscode.commands.executeCommand('gitgud.showDashboard');
       }
     };
+    const line = composeRoastLine(prefix, roast.message);
     switch (effectiveSeverity) {
       case 'savage':
-        vscode.window.showErrorMessage(`🔥 ${prefix} — ${roast.message}`, 'Show Advice', memeButton).then(onAction);
+        vscode.window.showErrorMessage(`🔥 ${line}`, 'Show Advice', memeButton).then(onAction);
         break;
       case 'medium':
-        vscode.window.showWarningMessage(`⚠️ ${prefix} — ${roast.message}`, 'Show Advice', memeButton).then(onAction);
+        vscode.window.showWarningMessage(`⚠️ ${line}`, 'Show Advice', memeButton).then(onAction);
         break;
       default:
-        vscode.window.showInformationMessage(`ℹ️ ${prefix} — ${roast.message}`, 'Show Advice', memeButton).then(onAction);
+        vscode.window.showInformationMessage(`ℹ️ ${line}`, 'Show Advice', memeButton).then(onAction);
         break;
     }
   }

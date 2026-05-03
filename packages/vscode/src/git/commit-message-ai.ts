@@ -41,16 +41,10 @@ async function callOllama(cfg: GitGudConfig, system: string, user: string): Prom
   const model = cfg.ollamaModel || 'deepseek-v4-flash:cloud';
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${cfg.ollamaApiKey}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Bearer ${cfg.ollamaApiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
       temperature: 0.4,
       max_tokens: 80,
     }),
@@ -63,8 +57,9 @@ async function callOllama(cfg: GitGudConfig, system: string, user: string): Prom
 }
 
 async function callGemini(cfg: GitGudConfig, system: string, user: string): Promise<string> {
+  const model = cfg.geminiModel || 'gemini-2.5-flash';
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(cfg.geminiApiKey)}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.geminiApiKey)}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -82,18 +77,88 @@ async function callGemini(cfg: GitGudConfig, system: string, user: string): Prom
   return text;
 }
 
+async function callClaude(cfg: GitGudConfig, system: string, user: string): Promise<string> {
+  const model = cfg.claudeModel || 'claude-sonnet-4-6';
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': cfg.claudeApiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 80,
+      system,
+      messages: [{ role: 'user', content: user }],
+      temperature: 0.4,
+    }),
+  });
+  if (!res.ok) throw new Error(`Claude error ${res.status}`);
+  const data: any = await res.json();
+  const block = Array.isArray(data?.content) ? data.content.find((b: any) => b.type === 'text') : null;
+  const text = block?.text?.trim();
+  if (!text) throw new Error('Empty response from Claude.');
+  return text;
+}
+
+async function callOpenai(cfg: GitGudConfig, system: string, user: string): Promise<string> {
+  const model = cfg.openaiModel || 'gpt-4o-mini';
+  const useNewTokenParam = /^o1/i.test(model);
+  const body: Record<string, unknown> = {
+    model,
+    messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+  };
+  if (useNewTokenParam) {
+    body.max_completion_tokens = 80;
+  } else {
+    body.max_tokens = 80;
+    body.temperature = 0.4;
+  }
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${cfg.openaiApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`OpenAI error ${res.status}`);
+  const data: any = await res.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Empty response from OpenAI.');
+  return content;
+}
+
+async function callXai(cfg: GitGudConfig, system: string, user: string): Promise<string> {
+  const model = cfg.xaiModel || 'grok-3-mini';
+  const res = await fetch('https://api.x.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${cfg.xaiApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+      temperature: 0.4,
+      max_tokens: 80,
+    }),
+  });
+  if (!res.ok) throw new Error(`xAI error ${res.status}`);
+  const data: any = await res.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Empty response from xAI.');
+  return content;
+}
+
 export async function generateCommitMessage(cfg: GitGudConfig, input: GenerateInput): Promise<string> {
   const system = buildSystem(input.style);
   const user = buildUser(input);
-  const wantOllama = cfg.aiProvider === 'ollama' && cfg.ollamaApiKey;
-  const wantGemini = cfg.aiProvider === 'gemini' && cfg.geminiApiKey;
-  if (!wantOllama && !wantGemini) {
-    throw new Error('No AI provider configured. Set an API key in settings.');
-  }
-  const raw = await withTimeout(
-    wantGemini ? callGemini(cfg, system, user) : callOllama(cfg, system, user),
-    15000,
-  );
+  const p = cfg.aiProvider;
+  let call: Promise<string>;
+  if (p === 'gemini' && cfg.geminiApiKey) call = callGemini(cfg, system, user);
+  else if (p === 'claude' && cfg.claudeApiKey) call = callClaude(cfg, system, user);
+  else if (p === 'openai' && cfg.openaiApiKey) call = callOpenai(cfg, system, user);
+  else if (p === 'xai' && cfg.xaiApiKey) call = callXai(cfg, system, user);
+  else if (p === 'ollama' && cfg.ollamaApiKey) call = callOllama(cfg, system, user);
+  else throw new Error('No AI provider configured. Set an API key in settings.');
+
+  const raw = await withTimeout(call, 15000);
   const cleaned = sanitize(raw);
   if (!cleaned) throw new Error('AI returned an empty message.');
   return cleaned;
