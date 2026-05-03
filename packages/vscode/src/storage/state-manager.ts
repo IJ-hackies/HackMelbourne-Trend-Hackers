@@ -20,6 +20,7 @@ export interface StoredEvent {
   roastExcerpt: string;
   severity: string;
   scoreDelta: number;
+  reactionImage?: string;
 }
 
 const STATE_KEY = 'gitgud.playerState';
@@ -79,6 +80,7 @@ export class StateManager {
       roastExcerpt: bestRoast?.message ?? '',
       severity: bestRoast?.severity ?? result.analysis.highestSeverity,
       scoreDelta: result.score.delta,
+      reactionImage: bestRoast?.reactionImage,
     };
 
     const history = this.getEventHistory();

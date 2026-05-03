@@ -31,3 +31,4 @@ Monorepo with npm workspaces:
 - `packages/core` — Shared logic (analysis, scoring, roasts, achievements, personality)
 - `packages/vscode` — VS Code extension (UI, event detection, notifications)
 - `packages/web` — Next.js site (placeholder)
+

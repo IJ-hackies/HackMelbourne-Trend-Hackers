@@ -1,4 +1,4 @@
-import type { Roast, GitEvent } from '../types';
+import type { Roast, GitEvent, ReactionImageEntry } from '../types';
 import type { AnyVerdict } from '../analysis/types';
 import type { OllamaConfig } from './ollama';
 import type { GeminiConfig } from './gemini';
@@ -10,6 +10,7 @@ export interface RoastConfig {
   provider: 'ollama' | 'gemini';
   ollama?: OllamaConfig;
   gemini?: GeminiConfig;
+  reactionImages?: ReactionImageEntry[];
 }
 
 /**
@@ -66,16 +67,16 @@ export async function generateRoast(
   if (config) {
     try {
       if (config.provider === 'gemini' && config.gemini?.apiKey) {
-        return await generateGeminiRoast(verdict, config.gemini, event);
+        return await generateGeminiRoast(verdict, config.gemini, event, config.reactionImages);
       }
       if (config.provider === 'ollama' && config.ollama?.apiKey) {
-        return await generateOllamaRoast(verdict, config.ollama, event);
+        return await generateOllamaRoast(verdict, config.ollama, event, config.reactionImages);
       }
       if (config.ollama?.apiKey) {
-        return await generateOllamaRoast(verdict, config.ollama, event);
+        return await generateOllamaRoast(verdict, config.ollama, event, config.reactionImages);
       }
       if (config.gemini?.apiKey) {
-        return await generateGeminiRoast(verdict, config.gemini, event);
+        return await generateGeminiRoast(verdict, config.gemini, event, config.reactionImages);
       }
     } catch (err) {
       console.error(`[GitGud] Single roast AI call failed for ${verdict.category}/${verdict.pattern}:`, err);
@@ -136,23 +137,23 @@ export async function generateCombinedRoast(
     try {
       if (config.provider === 'gemini' && config.gemini?.apiKey) {
         console.log('[GitGud] Calling Gemini combined roast...');
-        const result = await generateGeminiCombinedRoast(nonClean, config.gemini, event);
+        const result = await generateGeminiCombinedRoast(nonClean, config.gemini, event, config.reactionImages);
         console.log(`[GitGud] Gemini response: "${result.message}"`);
         return result;
       }
       if (config.provider === 'ollama' && config.ollama?.apiKey) {
         console.log(`[GitGud] Calling Ollama combined roast (model=${config.ollama.model}, url=${config.ollama.baseUrl})...`);
-        const result = await generateOllamaCombinedRoast(nonClean, config.ollama, event);
+        const result = await generateOllamaCombinedRoast(nonClean, config.ollama, event, config.reactionImages);
         console.log(`[GitGud] Ollama response: "${result.message}"`);
         return result;
       }
       if (config.ollama?.apiKey) {
         console.log('[GitGud] Falling back to Ollama (non-preferred provider)...');
-        return await generateOllamaCombinedRoast(nonClean, config.ollama, event);
+        return await generateOllamaCombinedRoast(nonClean, config.ollama, event, config.reactionImages);
       }
       if (config.gemini?.apiKey) {
         console.log('[GitGud] Falling back to Gemini (non-preferred provider)...');
-        return await generateGeminiCombinedRoast(nonClean, config.gemini, event);
+        return await generateGeminiCombinedRoast(nonClean, config.gemini, event, config.reactionImages);
       }
       console.log('[GitGud] No API key configured for any provider, falling back to templates');
     } catch (err) {

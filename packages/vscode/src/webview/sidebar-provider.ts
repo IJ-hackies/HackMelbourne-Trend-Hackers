@@ -174,8 +174,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     this._view?.webview.postMessage({ type: 'updateState', data });
   }
 
-  private _getHtml(_webview: vscode.Webview): string {
+  private _getHtml(webview: vscode.Webview): string {
     const nonce = getNonce();
+    const reactionsBaseUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'reactions')
+    );
 
     return /*html*/ `<!DOCTYPE html>
 <html lang="en">
@@ -183,7 +186,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
+  content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource};" />
 <style nonce="${nonce}">
 :root {
   --rank-bronze: #cd7f32;
@@ -556,6 +559,12 @@ body {
   margin-bottom: 8px;
   overflow: hidden;
 }
+.latest-roast-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
 .latest-roast-img-placeholder {
   font-size: 32px;
   opacity: 0.4;
@@ -607,6 +616,8 @@ body {
   const vscode = acquireVsCodeApi();
   const root = document.getElementById('root');
 
+  const REACTIONS_BASE = '${reactionsBaseUri}';
+
   const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#00d2ff' };
   const EVENT_ICONS = {
     'commit': '\\u{1F4DD}', 'branch-switch': '\\u{1F500}', 'force-push': '\\u{1F4A5}',
@@ -649,7 +660,11 @@ body {
     const latest = roasts[0];
     let h = '<div class="card">';
     h += '<div class="card-title">\\u{1F525} Latest Roast</div>';
-    h += '<div class="latest-roast-img"><div class="latest-roast-img-placeholder">\\u{1F5BC}\\u{FE0F}</div></div>';
+    if (latest && latest.reactionImage) {
+      h += '<div class="latest-roast-img"><img src="' + REACTIONS_BASE + '/' + esc(latest.reactionImage) + '" alt="Reaction" /></div>';
+    } else {
+      h += '<div class="latest-roast-img"><div class="latest-roast-img-placeholder">\\u{1F5BC}\\u{FE0F}</div></div>';
+    }
     if (latest) {
       const icon = SEVERITY_ICONS[latest.severity] || SEVERITY_ICONS.mild;
       const cls = SEVERITY_CLASSES[latest.severity] || SEVERITY_CLASSES.mild;

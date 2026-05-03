@@ -1,4 +1,4 @@
-import type { Roast, GitEvent } from '../types';
+import type { Roast, GitEvent, ReactionImageEntry } from '../types';
 import type { AnyVerdict } from '../analysis/types';
 import { pickMemePool } from '../memes';
 
@@ -15,7 +15,16 @@ function detectSixSeven(event?: GitEvent): boolean {
   return SIX_SEVEN_RE.test(haystack);
 }
 
-function buildSystemPrompt(sixSevenTriggered: boolean): string {
+function buildReactionImageBlock(images?: ReactionImageEntry[]): string {
+  if (!images || images.length === 0) return '';
+  const list = images.map(img => `- ${img.file}: "${img.description}" [moods: ${img.moods.join(', ')}] [severity: ${img.severity.join(', ')}]`).join('\n');
+  return `\n\nREACTION IMAGES (pick the one that best matches your roast's vibe and severity):
+${list}
+
+You MUST include an IMAGE line in your response with the exact filename of your chosen image.`;
+}
+
+function buildSystemPrompt(sixSevenTriggered: boolean, reactionImages?: ReactionImageEntry[]): string {
   const pool = pickMemePool({ perCategory: 2, totalCap: 14 });
   const slangLine = pool.map(s => `"${s}"`).join(', ');
 
@@ -44,8 +53,9 @@ REFERENCE USAGE NOTES:
 STRICT FORMAT:
 ROAST: <one or two punchy sentences, max 30 words total>
 ADVICE: <one short sentence, max 20 words>
+IMAGE: <exact filename of the chosen reaction image, or NONE if no images available>
 
-No markdown, no emojis, no quotes, no extra lines. Be punchy.`;
+No markdown, no emojis, no quotes, no extra lines. Be punchy.${buildReactionImageBlock(reactionImages)}`;
 }
 
 function formatEventContext(event?: GitEvent): string {
@@ -77,10 +87,25 @@ function buildMultiVerdictPrompt(verdicts: AnyVerdict[], event?: GitEvent): stri
   return prompt;
 }
 
+function parseGeminiResponse(text: string): Roast {
+  const roastMatch = text.match(/ROAST:\s*(.+?)(?=\n|ADVICE:|IMAGE:|$)/is);
+  const adviceMatch = text.match(/ADVICE:\s*(.+?)(?=\n|IMAGE:|$)/is);
+  const imageMatch = text.match(/IMAGE:\s*(.+?)$/im);
+  let roast = roastMatch?.[1]?.trim() ?? text.split('\n')[0] ?? text;
+  let advice = adviceMatch?.[1]?.trim() ?? '';
+  const imagePick = imageMatch?.[1]?.trim() ?? '';
+  if (roast.length > 200) roast = roast.slice(0, 197) + '...';
+  if (advice.length > 200) advice = advice.slice(0, 197) + '...';
+  const reactionImage = imagePick && imagePick.toLowerCase() !== 'none' ? imagePick : undefined;
+
+  return { message: roast, severity: 'medium', advice, reactionImage };
+}
+
 export async function generateGeminiCombinedRoast(
   verdicts: AnyVerdict[],
   config: GeminiConfig,
   event?: GitEvent,
+  reactionImages?: ReactionImageEntry[],
 ): Promise<Roast> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(config.apiKey)}`,
@@ -88,9 +113,9 @@ export async function generateGeminiCombinedRoast(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: buildSystemPrompt(detectSixSeven(event)) }] },
+        system_instruction: { parts: [{ text: buildSystemPrompt(detectSixSeven(event), reactionImages) }] },
         contents: [{ role: 'user', parts: [{ text: buildMultiVerdictPrompt(verdicts, event) }] }],
-        generationConfig: { temperature: 1.0, maxOutputTokens: 250, thinkingConfig: { thinkingBudget: 0 } },
+        generationConfig: { temperature: 1.0, maxOutputTokens: 350, thinkingConfig: { thinkingBudget: 0 } },
       }),
     },
   );
@@ -98,20 +123,14 @@ export async function generateGeminiCombinedRoast(
   const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
   if (!text) throw new Error('Empty Gemini response');
 
-  const roastMatch = text.match(/ROAST:\s*(.+?)(?=\n|ADVICE:|$)/is);
-  const adviceMatch = text.match(/ADVICE:\s*(.+?)$/is);
-  let roast = roastMatch?.[1]?.trim() ?? text.split('\n')[0] ?? text;
-  let advice = adviceMatch?.[1]?.trim() ?? '';
-  if (roast.length > 200) roast = roast.slice(0, 197) + '...';
-  if (advice.length > 200) advice = advice.slice(0, 197) + '...';
-
-  return { message: roast, severity: 'medium', advice };
+  return parseGeminiResponse(text);
 }
 
 export async function generateGeminiRoast(
   verdict: AnyVerdict,
   config: GeminiConfig,
   event?: GitEvent,
+  reactionImages?: ReactionImageEntry[],
 ): Promise<Roast> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(config.apiKey)}`,
@@ -119,9 +138,9 @@ export async function generateGeminiRoast(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: buildSystemPrompt(detectSixSeven(event)) }] },
+        system_instruction: { parts: [{ text: buildSystemPrompt(detectSixSeven(event), reactionImages) }] },
         contents: [{ role: 'user', parts: [{ text: buildUserPrompt(verdict, event) }] }],
-        generationConfig: { temperature: 1.0, maxOutputTokens: 250, thinkingConfig: { thinkingBudget: 0 } },
+        generationConfig: { temperature: 1.0, maxOutputTokens: 350, thinkingConfig: { thinkingBudget: 0 } },
       }),
     },
   );
@@ -129,12 +148,5 @@ export async function generateGeminiRoast(
   const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
   if (!text) throw new Error('Empty Gemini response');
 
-  const roastMatch = text.match(/ROAST:\s*(.+?)(?=\n|ADVICE:|$)/is);
-  const adviceMatch = text.match(/ADVICE:\s*(.+?)$/is);
-  let roast = roastMatch?.[1]?.trim() ?? text.split('\n')[0] ?? text;
-  let advice = adviceMatch?.[1]?.trim() ?? '';
-  if (roast.length > 200) roast = roast.slice(0, 197) + '...';
-  if (advice.length > 200) advice = advice.slice(0, 197) + '...';
-
-  return { message: roast, severity: 'medium', advice };
+  return parseGeminiResponse(text);
 }

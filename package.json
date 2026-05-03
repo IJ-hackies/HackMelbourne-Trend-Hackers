@@ -2,13 +2,19 @@
   "name": "git-gud",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build:core && npm run build:ext",
     "build:core": "npm run build --workspace=@git-gud/core",
     "build:ext": "npm run build --workspace=git-gud-vscode",
     "dev:web": "npm run dev --workspace=@git-gud/web",
     "dev:ext": "npm run watch --workspace=git-gud-vscode",
-    "test": "npm run test --workspace=@git-gud/core"
+    "test": "npm run test --workspace=@git-gud/core",
+    "tag-reactions": "tsx scripts/tag-reactions.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

@@ -1,4 +1,4 @@
-import type { Roast, GitEvent } from '../types';
+import type { Roast, GitEvent, ReactionImageEntry } from '../types';
 import type { AnyVerdict } from '../analysis/types';
 import { pickMemePool } from '../memes';
 
@@ -20,7 +20,16 @@ function detectSixSeven(event?: GitEvent): boolean {
   return SIX_SEVEN_RE.test(haystack);
 }
 
-function buildSystemPrompt(sixSevenTriggered: boolean): string {
+function buildReactionImageBlock(images?: ReactionImageEntry[]): string {
+  if (!images || images.length === 0) return '';
+  const list = images.map(img => `- ${img.file}: "${img.description}" [moods: ${img.moods.join(', ')}] [severity: ${img.severity.join(', ')}]`).join('\n');
+  return `\n\nREACTION IMAGES (pick the one that best matches your roast's vibe and severity):
+${list}
+
+You MUST include an IMAGE line in your response with the exact filename of your chosen image.`;
+}
+
+function buildSystemPrompt(sixSevenTriggered: boolean, reactionImages?: ReactionImageEntry[]): string {
   const pool = pickMemePool({ perCategory: 2, totalCap: 14 });
   const slangLine = pool.map(s => `"${s}"`).join(', ');
 
@@ -49,8 +58,9 @@ REFERENCE USAGE NOTES:
 STRICT FORMAT:
 ROAST: <one or two punchy sentences, max 30 words total>
 ADVICE: <one short sentence, max 20 words>
+IMAGE: <exact filename of the chosen reaction image, or NONE if no images available>
 
-No markdown, no emojis, no quotes, no extra lines. Be punchy.`;
+No markdown, no emojis, no quotes, no extra lines. Be punchy.${buildReactionImageBlock(reactionImages)}`;
 }
 
 function formatEventContext(event?: GitEvent): string {
@@ -83,10 +93,12 @@ function buildMultiVerdictPrompt(verdicts: AnyVerdict[], event?: GitEvent): stri
 }
 
 function parseResponse(text: string): Roast | null {
-  const roastMatch = text.match(/ROAST:\s*(.+?)(?=\n|ADVICE:|$)/is);
-  const adviceMatch = text.match(/ADVICE:\s*(.+?)$/is);
+  const roastMatch = text.match(/ROAST:\s*(.+?)(?=\n|ADVICE:|IMAGE:|$)/is);
+  const adviceMatch = text.match(/ADVICE:\s*(.+?)(?=\n|IMAGE:|$)/is);
+  const imageMatch = text.match(/IMAGE:\s*(.+?)$/im);
   let roast = roastMatch?.[1]?.trim() ?? '';
   let advice = adviceMatch?.[1]?.trim() ?? '';
+  const imagePick = imageMatch?.[1]?.trim() ?? '';
 
   if (!roast) {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -98,7 +110,8 @@ function parseResponse(text: string): Roast | null {
   if (advice.length > 200) advice = advice.slice(0, 197) + '...';
 
   const severity = determineSeverity(roast);
-  return { message: roast, severity, advice };
+  const reactionImage = imagePick && imagePick.toLowerCase() !== 'none' ? imagePick : undefined;
+  return { message: roast, severity, advice, reactionImage };
 }
 
 function determineSeverity(roast: string): Roast['severity'] {
@@ -168,6 +181,7 @@ export async function generateOllamaCombinedRoast(
   verdicts: AnyVerdict[],
   config: OllamaConfig,
   event?: GitEvent,
+  reactionImages?: ReactionImageEntry[],
 ): Promise<Roast> {
   const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
   const model = config.model ?? DEFAULT_MODEL;
@@ -176,7 +190,7 @@ export async function generateOllamaCombinedRoast(
     baseUrl,
     model,
     config.apiKey,
-    buildSystemPrompt(detectSixSeven(event)),
+    buildSystemPrompt(detectSixSeven(event), reactionImages),
     buildMultiVerdictPrompt(verdicts, event),
   );
 
@@ -189,6 +203,7 @@ export async function generateOllamaRoast(
   verdict: AnyVerdict,
   config: OllamaConfig,
   event?: GitEvent,
+  reactionImages?: ReactionImageEntry[],
 ): Promise<Roast> {
   const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
   const model = config.model ?? DEFAULT_MODEL;
@@ -197,7 +212,7 @@ export async function generateOllamaRoast(
     baseUrl,
     model,
     config.apiKey,
-    buildSystemPrompt(detectSixSeven(event)),
+    buildSystemPrompt(detectSixSeven(event), reactionImages),
     buildUserPrompt(verdict, event),
   );
 
