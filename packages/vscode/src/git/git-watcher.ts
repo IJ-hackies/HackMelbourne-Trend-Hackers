@@ -57,11 +57,13 @@ export class GitWatcher {
     return head.replace('ref: refs/heads/', '');
   }
 
-  private async emit(type: GitEventType, metadata: Record<string, unknown> = {}) {
+  private emit(type: GitEventType, metadata: Record<string, unknown> = {}) {
     const root = this.workspacePath();
     if (!root) return;
     this.out.appendLine(`→ event: ${type} ${JSON.stringify(metadata)}`);
-    await this.onEvent({ type, timestamp: Date.now(), repoPath: root, metadata });
+    void Promise.resolve(this.onEvent({ type, timestamp: Date.now(), repoPath: root, metadata })).catch(err => {
+      this.out.appendLine(`[ERROR] ${type}: ${err}`);
+    });
   }
 
   private setupWatchers(root: string) {
