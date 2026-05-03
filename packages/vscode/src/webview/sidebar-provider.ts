@@ -180,7 +180,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   private _getHtml(webview: vscode.Webview): string {
     const nonce = getNonce();
-    const fahhhUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'sounds', 'fahhh.mpeg'));
 
     return /*html*/ `<!DOCTYPE html>
 <html lang="en">
@@ -561,13 +560,10 @@ body {
   </div>
 </div>
 
-<audio id="fahhh-audio" src="${fahhhUri}" preload="auto"></audio>
-
 <script nonce="${nonce}">
 (function() {
   const vscode = acquireVsCodeApi();
   const root = document.getElementById('root');
-  const fahhhAudio = document.getElementById('fahhh-audio');
 
   const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#00d2ff' };
   const EVENT_ICONS = {
@@ -577,6 +573,19 @@ body {
 
   let state = null;
   let soundEnabled = true;
+  let audioCtx = null;
+
+  // Unlock audio on first user click anywhere in the webview
+  document.addEventListener('click', function unlockAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    document.removeEventListener('click', unlockAudio);
+  });
+
   // Local UI state preserved across re-renders:
   let scMessage = '';
   let scGenerating = false;
@@ -993,7 +1002,14 @@ body {
   function playSound(type) {
     if (!soundEnabled) return;
     try {
-      const ctx = new AudioContext();
+      // Create/resume audio context on demand (browsers allow creation, start suspended)
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const ctx = audioCtx;
       switch (type) {
         case 'rank-up': {
           const notes = [523, 659, 784, 1047];
@@ -1028,10 +1044,23 @@ body {
           break;
         }
         case 'fahhh': {
-          if (fahhhAudio) {
-            fahhhAudio.currentTime = 0;
-            fahhhAudio.play().catch(() => {});
-          }
+          // Synthesized "fahhh" (sad trombone-ish desc)
+          const now = ctx.currentTime;
+          const f1 = ctx.createOscillator(), g1 = ctx.createGain();
+          f1.type = 'sawtooth'; f1.frequency.value = 262; f1.connect(g1); g1.connect(ctx.destination);
+          g1.gain.setValueAtTime(0.15, now);
+          g1.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+          // Pitch slide down
+          f1.frequency.setValueAtTime(262, now);
+          f1.frequency.exponentialRampToValueAtTime(80, now + 1.2);
+          f1.start(now); f1.stop(now + 1.3);
+
+          const f2 = ctx.createOscillator(), g2 = ctx.createGain();
+          f2.type = 'sine'; f2.frequency.value = 196; f2.connect(g2); g2.connect(ctx.destination);
+          g2.gain.setValueAtTime(0.1, now + 0.1);
+          g2.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+          f2.frequency.exponentialRampToValueAtTime(65, now + 1.2);
+          f2.start(now + 0.1); f2.stop(now + 1.3);
           break;
         }
         case 'dayum': {
