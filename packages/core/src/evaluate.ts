@@ -4,7 +4,7 @@ import type { RankEvaluation } from './ranks/evaluator';
 import type { PersonalityResult } from './personality/classifier';
 import type { RoastConfig } from './roasts/generator';
 import { analyzeEvent } from './analysis/analyze-event';
-import { generateRoasts } from './roasts/generator';
+import { generateRoasts, generateCombinedRoast } from './roasts/generator';
 import { calculateScore } from './scoring/engine';
 import { evaluateRank } from './ranks/evaluator';
 import { checkAchievements } from './achievements/tracker';
@@ -20,6 +20,7 @@ export interface PlayerState {
 export interface EvaluationResult {
   analysis: AnalysisResult;
   roasts: Roast[];
+  combinedRoast: Roast | null;
   score: Score;
   rankEvaluation: RankEvaluation;
   achievements: Achievement[];
@@ -32,9 +33,16 @@ export async function evaluate(
   context?: AnalysisContext,
   roastConfig?: RoastConfig,
 ): Promise<EvaluationResult> {
+  const t0 = Date.now();
   const analysis = analyzeEvent(event, context);
+  console.log(`[GitGud] Analysis: ${Date.now() - t0}ms`);
 
-  const roasts = await generateRoasts(analysis.verdicts, roastConfig, event);
+  const tRoasts = Date.now();
+  const [roasts, combinedRoast] = await Promise.all([
+    generateRoasts(analysis.verdicts, roastConfig, event),
+    generateCombinedRoast(analysis.verdicts, roastConfig, event),
+  ]);
+  console.log(`[GitGud] Roasts + combined AI: ${Date.now() - tRoasts}ms`);
 
   const score = calculateScore(analysis.verdicts, playerState.score);
 
@@ -49,6 +57,7 @@ export async function evaluate(
   return {
     analysis,
     roasts,
+    combinedRoast,
     score,
     rankEvaluation,
     achievements,

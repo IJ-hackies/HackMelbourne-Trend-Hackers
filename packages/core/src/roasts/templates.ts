@@ -43,7 +43,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'commit-message' && v.pattern === 'generic',
     generate: () => roast('medium',
-      'That commit message could apply to literally any commit in history. Impressive in the worst way.',
+      'That commit message could apply to literally any commit in history. Impressive in the worst way. And on {branch} of all places.',
       'Try: "fix: prevent login redirect loop when session expires".',
     ),
   },
@@ -64,7 +64,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'commit-message' && v.pattern === 'all-caps',
     generate: () => roast('savage',
-      'Your commit message sounds like an esports commentator having a breakdown. Deep breaths.',
+      'Your commit message on {branch} sounds like an esports commentator having a breakdown. Deep breaths.',
       'Channel the rage into a clear description of what you fixed.',
     ),
   },
@@ -171,7 +171,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'branch-name' && v.pattern === 'meaningless',
     generate: () => roast('mild',
-      'That branch name is the git equivalent of naming a file "untitled_final_v2_FINAL."',
+      'Branch "{branch}" is the git equivalent of naming a file "untitled_final_v2_FINAL."',
       'Descriptive names help you and your team find things later.',
     ),
   },
@@ -257,7 +257,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'commit-size' && v.pattern === 'giant',
     generate: () => roast('savage',
-      'Congratulations, you just committed an entire codebase refactor in one shot. Nobody can review this.',
+      'Congratulations, you just committed {files} files in one shot. Nobody can review this.',
       'Atomic commits: each one should do one thing and be independently reviewable.',
     ),
   },
@@ -299,7 +299,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'commit-size' && v.pattern === 'high-deletion-ratio',
     generate: () => roast('medium',
-      'More deletions than insertions? You\'re not writing code, you\'re unwriting it.',
+      '+{insertions}/-{deletions} lines? You\'re not writing code, you\'re unwriting it.',
       'Cleanup is valid, but review the deleted code one more time before pushing.',
     ),
   },
@@ -350,7 +350,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'risky-action' && v.pattern === 'force-push',
     generate: () => roast('savage',
-      'You force-pushed. Somewhere, a teammate\'s local branch just became archaeology.',
+      'You force-pushed to {branch}. Somewhere, a teammate\'s local branch just became archaeology.',
       'Coordinate with your team before rewriting shared history.',
     ),
   },
@@ -364,7 +364,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'risky-action' && v.pattern === 'direct-push-default',
     generate: () => roast('savage',
-      'Pushing straight to main like you\'re the only developer on Earth.',
+      'Pushing straight to {branch} like you\'re the only developer on Earth.',
       'Branch → PR → Review → Merge. This is not optional.',
     ),
   },
@@ -471,7 +471,7 @@ export const templates: RoastTemplate[] = [
   {
     match: v => v.category === 'session' && v.pattern === 'late-night',
     generate: () => roast('savage',
-      'Late-night commit detected. Your pillow filed a missing persons report.',
+      'Committing at {hour}? Your pillow filed a missing persons report.',
       'Nothing good happens in git after midnight.',
     ),
   },

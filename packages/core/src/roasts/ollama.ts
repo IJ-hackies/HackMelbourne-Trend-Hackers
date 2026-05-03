@@ -8,8 +8,8 @@ export interface OllamaConfig {
   baseUrl?: string;
 }
 
-const DEFAULT_MODEL = 'kimi-k2.6:cloud';
-const DEFAULT_BASE_URL = 'https://ollama.com/v1';
+const DEFAULT_MODEL = 'deepseek-v4-flash:cloud';
+const DEFAULT_BASE_URL = 'https://ollama.com/api';
 
 const SIX_SEVEN_RE = /\b(67|6-7|6\.7|six[\s-]?seven)\b/i;
 
@@ -47,24 +47,39 @@ REFERENCE USAGE NOTES:
 - AI fruit videos = surreal anthropomorphic fruit drama on Reels; reference for absurd/chaotic energy.
 
 STRICT FORMAT:
-ROAST: <one short sentence, max 20 words>
+ROAST: <one or two punchy sentences, max 30 words total>
 ADVICE: <one short sentence, max 20 words>
 
 No markdown, no emojis, no quotes, no extra lines. Be punchy.`;
 }
 
-function buildUserPrompt(verdict: AnyVerdict): string {
-  const lines = [
-    `Git violation detected:`,
-    `Category: ${verdict.category}`,
-    `Type: ${verdict.pattern}`,
-    `Context: ${verdict.message}`,
-  ];
-  if (verdict.subject) {
-    lines.push(`Content: "${verdict.subject}"`);
-  }
-  lines.push('', 'Roast this violation. Follow the STRICT FORMAT.');
-  return lines.join('\n');
+function formatEventContext(event?: GitEvent): string {
+  if (!event) return '';
+  const m = event.metadata;
+  const parts: string[] = [];
+  if (m.commitMessage || m.message) parts.push(`Msg: "${m.commitMessage ?? m.message}"`);
+  if (m.branchName || m.branch) parts.push(`Branch: ${m.branchName ?? m.branch}`);
+  if (m.filesChanged || m.insertions || m.deletions) parts.push(`${m.filesChanged ?? '?'} files, +${m.insertions ?? 0}/-${m.deletions ?? 0}`);
+  const files = m.changedFiles ?? m.files;
+  if (Array.isArray(files) && files.length > 0) parts.push(`Files: ${files.slice(0, 3).join(', ')}`);
+  if (parts.length === 0) return '';
+  return `\nContext: ${parts.join(' | ')}`;
+}
+
+function buildUserPrompt(verdict: AnyVerdict, event?: GitEvent): string {
+  let prompt = `[${verdict.category}/${verdict.pattern}] ${verdict.message}`;
+  if (verdict.subject) prompt += ` Content: "${verdict.subject}"`;
+  prompt += formatEventContext(event);
+  prompt += '\nRoast this. Be specific to the context.';
+  return prompt;
+}
+
+function buildMultiVerdictPrompt(verdicts: AnyVerdict[], event?: GitEvent): string {
+  const issues = verdicts.map(v => `- [${v.category}/${v.pattern}] ${v.message}`).join('\n');
+  let prompt = `Issues:\n${issues}`;
+  prompt += formatEventContext(event);
+  prompt += '\nRoast ALL issues in one combined response. Be specific to the context.';
+  return prompt;
 }
 
 function parseResponse(text: string): Roast | null {
@@ -94,6 +109,82 @@ function determineSeverity(roast: string): Roast['severity'] {
   return 'mild';
 }
 
+async function callOllama(
+  baseUrl: string,
+  model: string,
+  apiKey: string,
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<string> {
+  const url = `${baseUrl}/chat`;
+  const t0 = Date.now();
+  console.log(`[GitGud] Ollama POST ${url} (model=${model})`);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      stream: false,
+      options: { temperature: 1.0 },
+    }),
+  });
+
+  const tResponse = Date.now();
+  console.log(`[GitGud] Ollama HTTP ${response.status} (network: ${tResponse - t0}ms)`);
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    console.error(`[GitGud] Ollama error body: ${body.slice(0, 300)}`);
+    throw new Error(`Ollama API error ${response.status}: ${body.slice(0, 100)}`);
+  }
+
+  const data = (await response.json()) as any;
+  const tParsed = Date.now();
+  console.log(`[GitGud] Ollama response parsed (parse: ${tParsed - tResponse}ms, total: ${tParsed - t0}ms)`);
+
+  // Native Ollama format: data.message.content
+  const content = data.message?.content
+    // OpenAI-compatible fallback: data.choices[0].message.content
+    ?? data.choices?.[0]?.message?.content;
+
+  if (!content) {
+    console.error(`[GitGud] Ollama empty content. Full response: ${JSON.stringify(data).slice(0, 500)}`);
+    throw new Error('Empty response from Ollama');
+  }
+
+  console.log(`[GitGud] Ollama content: "${content.slice(0, 150)}"`);
+  return content;
+}
+
+export async function generateOllamaCombinedRoast(
+  verdicts: AnyVerdict[],
+  config: OllamaConfig,
+  event?: GitEvent,
+): Promise<Roast> {
+  const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
+  const model = config.model ?? DEFAULT_MODEL;
+
+  const content = await callOllama(
+    baseUrl,
+    model,
+    config.apiKey,
+    buildSystemPrompt(detectSixSeven(event)),
+    buildMultiVerdictPrompt(verdicts, event),
+  );
+
+  const result = parseResponse(content);
+  if (!result) throw new Error('Failed to parse roast response');
+  return result;
+}
+
 export async function generateOllamaRoast(
   verdict: AnyVerdict,
   config: OllamaConfig,
@@ -102,30 +193,13 @@ export async function generateOllamaRoast(
   const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
   const model = config.model ?? DEFAULT_MODEL;
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${config.apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: buildSystemPrompt(detectSixSeven(event)) },
-        { role: 'user', content: buildUserPrompt(verdict) },
-      ],
-      temperature: 1.0,
-      max_tokens: 250,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Ollama API error ${response.status}`);
-  }
-
-  const data = (await response.json()) as any;
-  const content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error('Empty response from Ollama');
+  const content = await callOllama(
+    baseUrl,
+    model,
+    config.apiKey,
+    buildSystemPrompt(detectSixSeven(event)),
+    buildUserPrompt(verdict, event),
+  );
 
   const result = parseResponse(content);
   if (!result) throw new Error('Failed to parse roast response');

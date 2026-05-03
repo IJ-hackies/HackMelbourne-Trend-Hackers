@@ -4,5 +4,5 @@ export { generateOllamaRoast } from './ollama';
 export type { OllamaConfig } from './ollama';
 export { generateGeminiRoast } from './gemini';
 export type { GeminiConfig } from './gemini';
-export { generateRoast, generateRoasts, generateTemplateRoast } from './generator';
+export { generateRoast, generateRoasts, generateCombinedRoast, generateTemplateRoast } from './generator';
 export type { RoastConfig } from './generator';

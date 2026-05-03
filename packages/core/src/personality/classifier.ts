@@ -92,6 +92,18 @@ const ARCHETYPES: Archetype[] = [
       return s;
     },
   },
+  {
+    type: '\u{1F4A5} Merge Conflict Survivor',
+    description: 'You live in the conflict zone. Git merge is your daily workout.',
+    score: (stats) => {
+      let s = 0;
+      if (stats.totalConflictsResolved >= 3) s += 4;
+      if (stats.totalConflictsResolved >= 8) s += 3;
+      if (stats.totalMerges >= 5) s += 2;
+      if (stats.totalMergeConflicts >= 5) s += 1;
+      return s;
+    },
+  },
 ];
 
 const DEFAULT_PERSONALITY: PersonalityResult = {

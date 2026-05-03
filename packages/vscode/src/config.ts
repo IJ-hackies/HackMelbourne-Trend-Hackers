@@ -27,18 +27,24 @@ export function getConfig(): GitGudConfig {
 }
 
 export function getRoastConfig(config: GitGudConfig): RoastConfig | undefined {
+  console.log(`[GitGud] getRoastConfig: provider=${config.aiProvider}, ollamaKey=${config.ollamaApiKey ? 'SET(' + config.ollamaApiKey.slice(0, 4) + '...)' : 'EMPTY'}, geminiKey=${config.geminiApiKey ? 'SET(' + config.geminiApiKey.slice(0, 4) + '...)' : 'EMPTY'}`);
+
   if (config.aiProvider === 'gemini' && config.geminiApiKey) {
+    console.log('[GitGud] Using Gemini provider');
     return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey } };
   }
   if (config.ollamaApiKey) {
+    console.log(`[GitGud] Using Ollama provider (model=${config.ollamaModel || 'default'}, url=${config.ollamaBaseUrl || 'default'})`);
     return {
       provider: config.aiProvider,
       ollama: { apiKey: config.ollamaApiKey, model: config.ollamaModel || undefined, baseUrl: config.ollamaBaseUrl || undefined },
     };
   }
   if (config.geminiApiKey) {
+    console.log('[GitGud] Falling back to Gemini provider');
     return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey } };
   }
+  console.log('[GitGud] No API keys configured — roasts will use templates only');
   return undefined;
 }
 

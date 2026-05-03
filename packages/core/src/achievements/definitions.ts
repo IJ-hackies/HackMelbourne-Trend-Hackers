@@ -24,4 +24,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: 'weekend-warrior', name: 'Weekend Warrior', description: '20 weekend commits. Work-life balance is a myth.', trigger: { type: 'cumulative', statKey: 'weekendCommits', threshold: 20 } },
   { id: 'chaos-agent', name: 'Chaos Agent', description: '5 panic bursts. Calm was never an option.', trigger: { type: 'cumulative', statKey: 'panicBursts', threshold: 5 } },
   { id: 'readme-avoider', name: 'README Avoider', description: 'Reach score 300 without editing a README.', trigger: { type: 'cumulative', statKey: 'score', threshold: 300 } },
+
+  // From Huey (adapted to main's trigger format)
+  { id: 'first-blood', name: 'First Blood', description: 'Your first roast. Welcome to competitive Git.', trigger: { type: 'first_occurrence', statKey: 'totalCommits', threshold: 1 } },
+  { id: 'diamond-hands', name: 'Diamond Hands', description: 'Reach Diamond Git Wizard rank. The summit of version control.', trigger: { type: 'cumulative', statKey: 'score', threshold: 1000 } },
 ];
