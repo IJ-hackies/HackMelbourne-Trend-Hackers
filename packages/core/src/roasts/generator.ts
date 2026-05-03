@@ -1,4 +1,4 @@
-import type { Roast, GitEvent } from '../types';
+import type { Roast, GitEvent, ReactionImageEntry } from '../types';
 import type { AnyVerdict } from '../analysis/types';
 import type { OllamaConfig } from './ollama';
 import type { GeminiConfig } from './gemini';
@@ -47,6 +47,7 @@ function dispatchHype(verdicts: AnyVerdict[], config: RoastConfig, event?: GitEv
   if (config.provider === 'openai' && config.openai?.apiKey) return generateOpenaiHype(verdicts, config.openai, event);
   if (config.provider === 'xai' && config.xai?.apiKey) return generateXaiHype(verdicts, config.xai, event);
   return null;
+  reactionImages?: ReactionImageEntry[];
 }
 
 /**

@@ -124,6 +124,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     playerState: PlayerState,
     eventHistory: StoredEvent[],
     configFields: { aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: 'clean' | 'savage' },
+    configFields: { aiProvider: 'ollama' | 'gemini'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; commitMessageStyle: 'clean' | 'savage'; soundEnabled: boolean },
     sourceControl: SourceControlSnapshot,
     collapsed: Record<string, boolean>,
   ): SidebarData {
@@ -153,7 +154,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         commitsInCurrentSession: playerState.stats.commitsInCurrentSession,
         totalBranchSwitches: playerState.stats.totalBranchSwitches,
       },
-      soundEnabled: true,
+      soundEnabled: configFields.soundEnabled,
       aiProvider: configFields.aiProvider,
       ollamaApiKey: configFields.ollamaApiKey,
       ollamaModel: configFields.ollamaModel,
@@ -185,6 +186,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  playSound(sound: 'fahhh' | 'dayum' | 'rank-up' | 'rank-down' | 'achievement' | 'critical' | 'event'): void {
+    this.postMessage({ type: 'playSound', sound });
+  }
+
   focus(): void {
     if (this._view) {
       this._view.show(true);
@@ -195,8 +200,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     this._view?.webview.postMessage({ type: 'updateState', data });
   }
 
-  private _getHtml(_webview: vscode.Webview): string {
+  private _getHtml(webview: vscode.Webview): string {
     const nonce = getNonce();
+    const reactionsBaseUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'media', 'reactions')
+    );
+    const fahhhUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'sounds', 'fahhh.mpeg'));
 
     return /*html*/ `<!DOCTYPE html>
 <html lang="en">
@@ -204,7 +213,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
+  content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; media-src *; img-src ${webview.cspSource};" />
 <style nonce="${nonce}">
 :root {
   --bg: #0a0a0b;
@@ -738,6 +747,58 @@ select option:checked, select option:hover {
 .ach-icon .icon { font-size: 12px; vertical-align: -0.15em; }
 .status-icon { font-size: 13px; vertical-align: -0.18em; margin-right: 4px; }
 
+/* LATEST ROAST */
+.latest-roast-img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: var(--vscode-editor-background);
+  border: 1px dashed var(--vscode-widget-border, rgba(255,255,255,0.15));
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.latest-roast-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.latest-roast-img-placeholder {
+  font-size: 32px;
+  opacity: 0.4;
+}
+.latest-roast-text { font-size: 12px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
+.latest-roast-text.severity-savage { color: var(--critical); }
+.latest-roast-text.severity-medium { color: #e2c08d; }
+.roast-history-text.severity-savage { color: var(--critical); }
+.roast-history-text.severity-medium { color: #e2c08d; }
+.latest-roast-time { font-size: 10px; color: var(--vscode-descriptionForeground); }
+.latest-roast-empty { font-size: 12px; color: var(--vscode-descriptionForeground); font-style: italic; text-align: center; padding: 8px 0; }
+.latest-roast-toggle {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 4px 0;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+}
+.latest-roast-toggle:hover { text-decoration: underline; }
+.roast-history-list { list-style: none; margin-top: 6px; }
+.roast-history-item {
+  padding: 5px 0;
+  border-top: 1px solid var(--vscode-widget-border, rgba(255,255,255,0.06));
+}
+.roast-history-text { display: block; font-size: 11px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.roast-history-time { display: block; font-size: 10px; color: var(--vscode-descriptionForeground); margin-top: 2px; }
+
 /* LOADING */
 .loading { text-align: center; padding: 56px 12px; color: var(--mute); }
 .loading-title {
@@ -824,6 +885,48 @@ select option:checked, select option:hover {
       '<span class="card-title">' + svgIcon(iconName) + title + '</span>' +
       '<span class="chev">' + svgIcon('chevron') + '</span>' +
     '</div>';
+  }
+
+  let roastHistoryExpanded = false;
+
+  const SEVERITY_ICONS = { savage: '\\u{1F525}', medium: '\\u{26A0}\\u{FE0F}', mild: '\\u{2139}\\u{FE0F}' };
+  const SEVERITY_CLASSES = { savage: 'severity-savage', medium: 'severity-medium', mild: 'severity-mild' };
+
+  function renderLatestRoast(d) {
+    const roasts = (d.eventHistory || []).filter(e => e.roastExcerpt);
+    const latest = roasts[0];
+    let h = '<div class="card">';
+    h += '<div class="card-title">\\u{1F525} Latest Roast</div>';
+    if (latest && latest.reactionImage) {
+      h += '<div class="latest-roast-img"><img src="' + REACTIONS_BASE + '/' + esc(latest.reactionImage) + '" alt="Reaction" /></div>';
+    } else {
+      h += '<div class="latest-roast-img"><div class="latest-roast-img-placeholder">\\u{1F5BC}\\u{FE0F}</div></div>';
+    }
+    if (latest) {
+      const icon = SEVERITY_ICONS[latest.severity] || SEVERITY_ICONS.mild;
+      const cls = SEVERITY_CLASSES[latest.severity] || SEVERITY_CLASSES.mild;
+      h += '<div class="latest-roast-text ' + cls + '">' + icon + ' ' + esc(latest.roastExcerpt) + '</div>';
+      h += '<div class="latest-roast-time">' + timeAgo(latest.timestamp) + '</div>';
+    } else {
+      h += '<div class="latest-roast-empty">No roasts yet. Go do something questionable.</div>';
+    }
+    if (roasts.length > 1) {
+      h += '<button class="latest-roast-toggle" id="roast-history-toggle">' + (roastHistoryExpanded ? 'Hide history' : 'Show past roasts (' + (roasts.length - 1) + ')') + '</button>';
+      if (roastHistoryExpanded) {
+        h += '<ul class="roast-history-list">';
+        for (const r of roasts.slice(1, 10)) {
+          const rIcon = SEVERITY_ICONS[r.severity] || SEVERITY_ICONS.mild;
+          const rCls = SEVERITY_CLASSES[r.severity] || SEVERITY_CLASSES.mild;
+          h += '<li class="roast-history-item">';
+          h += '<span class="roast-history-text ' + rCls + '">' + rIcon + ' ' + esc(r.roastExcerpt) + '</span>';
+          h += '<span class="roast-history-time">' + timeAgo(r.timestamp) + '</span>';
+          h += '</li>';
+        }
+        h += '</ul>';
+      }
+    }
+    h += '</div>';
+    return h;
   }
 
   function renderRankCard(d) {
@@ -1128,9 +1231,10 @@ select option:checked, select option:hover {
   function render(d) {
     state = d;
     let html = '';
+    html += renderLatestRoast(d);
     html += renderRankCard(d);
-    html += renderSourceControl(d);
     html += renderPersonality(d);
+    html += renderSourceControl(d);
     html += renderOffenses(d);
     html += renderAchievements(d);
     html += renderStats(d);

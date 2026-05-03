@@ -52,7 +52,8 @@
       { "command": "gitgud.runDemo", "title": "Run Demo", "category": "Git Gud" },
       { "command": "gitgud.exportRankCard", "title": "Export Rank Card", "category": "Git Gud" },
       { "command": "gitgud.weeklyReport", "title": "Weekly Hygiene Report", "category": "Git Gud" },
-      { "command": "gitgud.shareToTeam", "title": "Share Stats to Team", "category": "Git Gud" }
+      { "command": "gitgud.shareToTeam", "title": "Share Stats to Team", "category": "Git Gud" },
+      { "command": "gitgud.toggleSound", "title": "Toggle Sound", "category": "Git Gud" }
     ],
     "configuration": {
       "title": "Git Gud",

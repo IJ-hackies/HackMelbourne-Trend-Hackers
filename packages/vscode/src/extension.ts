@@ -38,7 +38,10 @@ export function activate(context: vscode.ExtensionContext) {
   let conflictTracker: MergeConflictTracker | undefined;
 
   function getCollapsed(): Record<string, boolean> {
-    return context.globalState.get<Record<string, boolean>>(COLLAPSED_KEY, {});
+    const defaults: Record<string, boolean> = { sc: true, offenses: true, achievements: true, stats: true, actions: true, settings: true };
+    const saved = context.globalState.get<Record<string, boolean>>(COLLAPSED_KEY);
+    if (!saved) return defaults;
+    return { ...defaults, ...saved };
   }
 
   function refreshSidebar() {
@@ -59,6 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
         xaiApiKey: config.xaiApiKey,
         xaiModel: config.xaiModel,
         commitMessageStyle: config.commitMessageStyle,
+        soundEnabled: config.soundEnabled,
       },
       sourceControl.snapshot(),
       getCollapsed(),
@@ -138,43 +142,70 @@ export function activate(context: vscode.ExtensionContext) {
     if (!config.enabled) return;
 
     try {
-      if (event.type === 'commit' && event.repoPath) {
-        Object.assign(event.metadata, await getCommitDiff(event.repoPath));
-      } else if ((event.type === 'push-to-main' || event.type === 'force-push') && event.repoPath) {
-        Object.assign(event.metadata, await getPushDiff(event.repoPath, (event.metadata.branchName as string) ?? 'main'));
-      } else if (event.type === 'merge-conflict' && event.repoPath) {
-        Object.assign(event.metadata, await getMergeConflictFiles(event.repoPath));
-        if (!conflictTracker) {
-          conflictTracker = new MergeConflictTracker(event.repoPath, async (type, metadata) => {
-            await handleEvent({ type, timestamp: Date.now(), repoPath: event.repoPath, metadata });
-          });
-          await conflictTracker.start((event.metadata.changedFiles as string[]) ?? []);
+      try {
+        if (event.type === 'commit' && event.repoPath) {
+          Object.assign(event.metadata, await getCommitDiff(event.repoPath));
+        } else if ((event.type === 'push-to-main' || event.type === 'force-push') && event.repoPath) {
+          Object.assign(event.metadata, await getPushDiff(event.repoPath, (event.metadata.branchName as string) ?? 'main'));
+        } else if (event.type === 'merge-conflict' && event.repoPath) {
+          Object.assign(event.metadata, await getMergeConflictFiles(event.repoPath));
+          if (!conflictTracker) {
+            conflictTracker = new MergeConflictTracker(event.repoPath, async (type, metadata) => {
+              await handleEvent({ type, timestamp: Date.now(), repoPath: event.repoPath, metadata });
+            });
+            await conflictTracker.start((event.metadata.changedFiles as string[]) ?? []);
+          }
+        } else if (event.type === 'merge-conflict-resolved') {
+          conflictTracker?.stop();
+          conflictTracker = undefined;
         }
-      } else if (event.type === 'merge-conflict-resolved') {
-        conflictTracker?.stop();
-        conflictTracker = undefined;
-      }
-    } catch {}
+      } catch {}
 
-    const branch = (event.metadata.branchName ?? event.metadata.branch) as string | undefined;
-    const DEFAULT_BRANCHES = new Set(['main', 'master', 'develop', 'development', 'dev']);
-    const analysisContext: AnalysisContext = {
-      branchName: branch,
-      isDefaultBranch: branch ? DEFAULT_BRANCHES.has(branch.toLowerCase()) : false,
-      recentCommitTimestamps: stateManager.getRecentCommitDates(),
-    };
+      const branch = (event.metadata.branchName ?? event.metadata.branch) as string | undefined;
+      const DEFAULT_BRANCHES = new Set(['main', 'master', 'develop', 'development', 'dev']);
+      const analysisContext: AnalysisContext = {
+        branchName: branch,
+        isDefaultBranch: branch ? DEFAULT_BRANCHES.has(branch.toLowerCase()) : false,
+        recentCommitTimestamps: stateManager.getRecentCommitDates(),
+      };
 
-    const roastConfig = getRoastConfig(config);
-    const result = await evaluate(event, playerState, analysisContext, roastConfig);
+      const roastConfig = getRoastConfig(config, context.extensionUri.fsPath);
+      const result = await evaluate(event, playerState, analysisContext, roastConfig);
 
-    playerState = await stateManager.saveAfterEvaluation(event, result, playerState);
+      playerState = await stateManager.saveAfterEvaluation(event, result, playerState);
 
-    const newAchievements = result.achievements.filter(
-      a => a.unlocked && !playerState.unlockedAchievements.has(a.id),
-    );
+      const newAchievements = result.achievements.filter(
+        a => a.unlocked && !playerState.unlockedAchievements.has(a.id),
+      );
 
     const SILENT = new Set(['conflict-block-preview', 'file-fully-resolved']);
     if (!SILENT.has(event.type)) {
+      // Sound effects
+      if (config.soundEnabled) {
+        const highest = result.analysis.highestSeverity;
+        const evType = event.type;
+        const hasNewAchievements = newAchievements.length > 0;
+        const { promoted, demoted } = result.rankEvaluation;
+
+        // Priority: rank change > achievement > event severity
+        if (promoted) {
+          sidebarProvider.playSound('rank-up');
+        } else if (demoted) {
+          sidebarProvider.playSound('rank-down');
+        } else if (hasNewAchievements) {
+          sidebarProvider.playSound('achievement');
+        } else if (highest === 'critical') {
+          sidebarProvider.playSound('fahhh');
+        } else if (highest === 'warning') {
+          sidebarProvider.playSound('fahhh');
+        } else if (highest === 'info') {
+          // Good/clean commits
+          sidebarProvider.playSound('dayum');
+        } else {
+          sidebarProvider.playSound('event');
+        }
+      }
+
       if (config.voiceEnabled) {
         const savage = result.roasts.find((r) => r.severity === 'savage');
         if (savage) {
@@ -190,11 +221,13 @@ export function activate(context: vscode.ExtensionContext) {
             text: `Demoted to ${result.rankEvaluation.rank.name}. Do better.`,
           });
         }
+        await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements, result.combinedRoast);
       }
-      await showRoastNotifications(result.roasts, result.rankEvaluation, newAchievements, result.combinedRoast);
-    }
 
-    refreshSidebar();
+      refreshSidebar();
+    } catch (err) {
+      console.error('[GitGud] handleEvent error:', err);
+    }
   };
 
   gitWatcher = new GitWatcher(handleEvent);
@@ -241,6 +274,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
         vscode.window.showInformationMessage('Git Gud: API key saved.');
       }
+    }),
+    vscode.commands.registerCommand('gitgud.toggleSound', async () => {
+      const cfg = vscode.workspace.getConfiguration('gitgud');
+      const current = cfg.get<boolean>('soundEnabled', true);
+      await cfg.update('soundEnabled', !current, true);
+      vscode.window.showInformationMessage(`Git Gud sounds ${!current ? 'enabled' : 'disabled'}.`);
+      config = getConfig();
+      refreshSidebar();
     }),
     vscode.commands.registerCommand('gitgud.shareToTeam', async () => {
       const cfg = vscode.workspace.getConfiguration('gitgud');

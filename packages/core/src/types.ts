@@ -59,6 +59,15 @@ export interface Roast {
   message: string;
   severity: 'mild' | 'medium' | 'savage';
   advice: string;
+  reactionImage?: string;
+}
+
+export interface ReactionImageEntry {
+  file: string;
+  description: string;
+  moods: string[];
+  verdicts: string[];
+  severity: string[];
 }
 
 export interface RoastResult {

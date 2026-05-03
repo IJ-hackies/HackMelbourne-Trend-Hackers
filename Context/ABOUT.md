@@ -24,7 +24,7 @@ Monorepo with three workspaces:
 
 The **sidebar** is the canonical user surface. New user-facing features should add a button to the sidebar's Actions card and back it with a registered command. The command palette is a fallback, not the primary path.
 
-Sidebar card order (top → bottom): **Rank → Source Control → Personality → Recent Offenses → Achievements → Stats → Actions → Settings**. Rank and Personality are non-collapsible; every other card is collapsible with an animated chevron header, and per-card collapse state persists in `globalState` under the key `gitgud.collapsedSections`.
+Sidebar card order (top → bottom): **Latest Roast → Rank → Personality → Source Control → Recent Offenses → Achievements → Stats → Actions → Settings**. Latest Roast, Rank, and Personality are non-collapsible; every other card is collapsible with an animated chevron header (collapsed by default), and per-card collapse state persists in `globalState` under the key `gitgud.collapsedSections`.
 
 The sidebar uses a hardcoded brand palette (lime `#c8ff00` accent, hot pink `#ff3d6a`, dark `#0a0a0b` / `#111114` panels, JetBrains Mono labels, Inter body) and inline Lucide-style SVG icons throughout — it does not inherit VS Code theme variables, so it looks the same on light and dark themes. This matches `site/` for brand consistency.
 

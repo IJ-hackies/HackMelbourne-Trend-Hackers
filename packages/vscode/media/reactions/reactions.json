@@ -1,0 +1,914 @@
+{
+  "generated": "2026-05-03T11:11:42.276Z",
+  "model": "gemini-3-flash-preview:cloud",
+  "count": 45,
+  "images": [
+    {
+      "file": "0176460b1dc384619b21825a1a72fd5c.jpg",
+      "description": "Low-poly Mr. Bean looking intensely confused and judgmental.",
+      "moods": [
+        "confused",
+        "judging",
+        "disappointed",
+        "shocked"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "risky-action",
+        "push-to-main"
+      ],
+      "severity": [
+        "medium"
+      ]
+    },
+    {
+      "file": "039e5b0803f67b319486c0473b824a28.jpg",
+      "description": "A robot making a face of pure disgust and judgment.",
+      "moods": [
+        "disgusted",
+        "judging",
+        "disappointed",
+        "frustrated"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "force-push",
+        "push-to-main",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "0767f7e1d62f771acc31f6eb972eddb9.jpg",
+      "description": "Close-up of Gru with an intense, unhinged, judging stare.",
+      "moods": [
+        "shocked",
+        "judging",
+        "confused",
+        "panicking"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "commit-size",
+        "risky-action",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "0a1f26d410b26c4a1d2597155eb66287.jpg",
+      "description": "Tai Lung looking at a computer screen in utter disbelief.",
+      "moods": [
+        "shocked",
+        "disgusted",
+        "judging",
+        "confused"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "force-push",
+        "push-to-main",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "0d58a7d55c404ddaac169433ca598631.jpg",
+      "description": "Distorted face with tongue out, mocking extreme stupidity.",
+      "moods": [
+        "mocking",
+        "judging",
+        "sarcastic",
+        "disgusted"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "15a89acde18dea89a355d5969c275cdb.jpg",
+      "description": "Smug anime man putting a hand on someone's shoulder.",
+      "moods": [
+        "smug",
+        "mocking",
+        "judging",
+        "sarcastic"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "force-push",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "medium"
+      ]
+    },
+    {
+      "file": "1c6e35908fc18e6848e863198c1528f0.jpg",
+      "description": "Penguin with a thousand-yard stare, traumatized and shocked.",
+      "moods": [
+        "shocked",
+        "confused",
+        "panicking",
+        "disappointed",
+        "tired"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "merge-conflict",
+        "risky-action"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "269a4d43e301ba614f7f317b8c14cfbe.jpg",
+      "description": "Distorted face staring with pure judgment and disappointment.",
+      "moods": [
+        "disappointed",
+        "disgusted",
+        "judging",
+        "mocking",
+        "tired"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "push-to-main",
+        "force-push"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "31ca525fe5cb9ba2fe8fae843264f38f.jpg",
+      "description": "Traumatized soldier with a thousand-yard stare of pure horror.",
+      "moods": [
+        "shocked",
+        "tired",
+        "judging",
+        "panicking",
+        "disappointed"
+      ],
+      "verdicts": [
+        "merge-conflict",
+        "force-push",
+        "push-to-main",
+        "risky-action",
+        "commit-size"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "33511880a678e7dc4875eb066790ee58.jpg",
+      "description": "A person screaming in intense frustration with hands on head.",
+      "moods": [
+        "angry",
+        "frustrated",
+        "panicking",
+        "shocked"
+      ],
+      "verdicts": [
+        "merge-conflict",
+        "force-push",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "35fae2bdb0096ad007faf93992fcf7ca.jpg",
+      "description": "A man staring blankly with wide eyes in utter shock.",
+      "moods": [
+        "shocked",
+        "confused",
+        "panicking",
+        "judging"
+      ],
+      "verdicts": [
+        "risky-action",
+        "force-push",
+        "push-to-main",
+        "merge-conflict",
+        "commit-size"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "3f2d274ea95b3665f4b30b2b59245ab0.jpg",
+      "description": "A screaming, panicked figure emerging from a pile of debris.",
+      "moods": [
+        "panicking",
+        "shocked",
+        "frustrated",
+        "crying"
+      ],
+      "verdicts": [
+        "merge-conflict",
+        "force-push",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "40656de1d3e81a851675d56c7c7ffdb1.jpg",
+      "description": "Excited monkey pointing up with a wide open mouth.",
+      "moods": [
+        "shocked",
+        "mocking",
+        "sarcastic",
+        "judging"
+      ],
+      "verdicts": [
+        "commit-message",
+        "risky-action",
+        "push-to-main",
+        "commit-size"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "41fe5624e74305dfd77255b15278e4a7.jpg",
+      "description": "Boy's expression shifting from a smile to judgmental disappointment.",
+      "moods": [
+        "disappointed",
+        "judging",
+        "mocking"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "medium"
+      ]
+    },
+    {
+      "file": "4a3149209c5c0fbc8e579884e3979270.jpg",
+      "description": "Distorted crying face showing extreme distress and pathetic sobbing.",
+      "moods": [
+        "crying",
+        "frustrated",
+        "panicking",
+        "mocking"
+      ],
+      "verdicts": [
+        "merge-conflict",
+        "force-push",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "659240aa702a12a00d1252adbd9a01fc.jpg",
+      "description": "Distorted face staring in existential dread and shock.",
+      "moods": [
+        "shocked",
+        "disappointed",
+        "disgusted",
+        "panicking",
+        "judging",
+        "tired"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "merge-conflict",
+        "commit-size",
+        "risky-action"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "67c4d2488828d258c05a3a27a9d82102.jpg",
+      "description": "Distorted, brain-dead face showing extreme confusion and stupidity.",
+      "moods": [
+        "confused",
+        "mocking",
+        "judging",
+        "disappointed"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "push-to-main",
+        "force-push"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "6ca1870c35906d85f1300cc5cd46c35e.jpg",
+      "description": "Po from Kung Fu Panda looking tired and deeply disappointed.",
+      "moods": [
+        "disappointed",
+        "judging",
+        "tired",
+        "frustrated"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "session"
+      ],
+      "severity": [
+        "medium"
+      ]
+    },
+    {
+      "file": "78e34990fdae224049ca7a76e55c1efa.jpg",
+      "description": "A man with headphones making a disgusted, cringing face.",
+      "moods": [
+        "disappointed",
+        "frustrated",
+        "disgusted",
+        "judging"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "force-push",
+        "push-to-main"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "7c1a834bd1aafe3cc99eeca6912d120e.jpg",
+      "description": "Distorted pear-shaped face looking extremely disappointed and pathetic.",
+      "moods": [
+        "disappointed",
+        "crying",
+        "judging",
+        "tired"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "push-to-main"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "81cca77ae958c31e4963d9585259a553.jpg",
+      "description": "IShowSpeed looking extremely shocked and panicked with mouth wide open.",
+      "moods": [
+        "shocked",
+        "panicking",
+        "confused"
+      ],
+      "verdicts": [
+        "risky-action",
+        "force-push",
+        "push-to-main",
+        "merge-conflict",
+        "commit-size"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "843ae325fd430d38c9802f01470dcb51.jpg",
+      "description": "A confused monkey looking up with a finger in mouth.",
+      "moods": [
+        "confused",
+        "mocking",
+        "judging"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "merge-conflict",
+        "risky-action"
+      ],
+      "severity": [
+        "medium"
+      ]
+    },
+    {
+      "file": "852b5e3e496b878cfaa4c2e96b0f863a.jpg",
+      "description": "Man staring intensely with extreme suspicion and judgment.",
+      "moods": [
+        "judging",
+        "disgusted",
+        "angry",
+        "mocking"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "risky-action",
+        "commit-message"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "9828377a18db5cbeb439ea75678b4931.jpg",
+      "description": "Two people awkwardly missing a high-five, showing a mismatch.",
+      "moods": [
+        "mocking",
+        "confused",
+        "judging",
+        "sarcastic"
+      ],
+      "verdicts": [
+        "merge-conflict",
+        "commit-message",
+        "branch-name"
+      ],
+      "severity": [
+        "mild",
+        "medium"
+      ]
+    },
+    {
+      "file": "9a019a2a3ca735bd7cbb4b57748d9c6c.jpg",
+      "description": "Distorted face staring in absolute horror and disbelief.",
+      "moods": [
+        "shocked",
+        "disgusted",
+        "judging",
+        "panicking"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "risky-action",
+        "commit-size"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "a71c2442b1089a2c7828078f35cef133.jpg",
+      "description": "Monkey puppet looking away awkwardly to avoid eye contact.",
+      "moods": [
+        "judging",
+        "shocked",
+        "panicking"
+      ],
+      "verdicts": [
+        "risky-action",
+        "force-push",
+        "push-to-main",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium"
+      ]
+    },
+    {
+      "file": "acd3da2cd393f0b1bd02c62ea70a0685.jpg",
+      "description": "A husky with wide eyes pointing an accusatory finger.",
+      "moods": [
+        "judging",
+        "shocked",
+        "disappointed",
+        "mocking"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "force-push",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "an-expression-of-utter-distraught-and-sadness-v0-673fqp7aeexg1.webp",
+      "description": "Distorted face screaming in absolute existential agony and horror.",
+      "moods": [
+        "shocked",
+        "panicking",
+        "frustrated",
+        "disgusted"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "merge-conflict",
+        "risky-action"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "b7def07ff211ffd30822f52b20451363.jpg",
+      "description": "Man pointing to head with a smug, knowing expression.",
+      "moods": [
+        "smug",
+        "mocking",
+        "sarcastic",
+        "judging"
+      ],
+      "verdicts": [
+        "risky-action",
+        "force-push",
+        "push-to-main",
+        "commit-message"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "bruh.jpeg",
+      "description": "Distorted Lord Farquaad face with BRUH text expressing disbelief.",
+      "moods": [
+        "disappointed",
+        "judging",
+        "shocked",
+        "confused"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "risky-action",
+        "push-to-main"
+      ],
+      "severity": [
+        "mild",
+        "medium"
+      ]
+    },
+    {
+      "file": "c013c263649c1a5694e3c5317a526915.jpg",
+      "description": "Man clutching head in disbelief and judging disappointment.",
+      "moods": [
+        "disappointed",
+        "confused",
+        "judging",
+        "facepalm"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "risky-action"
+      ],
+      "severity": [
+        "medium"
+      ]
+    },
+    {
+      "file": "c9ad50cf20c7f10a75deba9546a04edf.jpg",
+      "description": "Nick Wilde with wide, bulging eyes looking shocked and horrified.",
+      "moods": [
+        "shocked",
+        "disgusted",
+        "judging",
+        "panicking",
+        "confused"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "commit-size",
+        "risky-action",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "ca3cba708397dfd28d909cd8fdf032fa.jpg",
+      "description": "Mike Wazowski with a deadpan, disappointed face swap.",
+      "moods": [
+        "disappointed",
+        "judging",
+        "tired",
+        "frustrated"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "push-to-main",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "confused.jpeg",
+      "description": "Nick Young looking extremely confused with question marks.",
+      "moods": [
+        "confused",
+        "judging",
+        "mocking"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "merge-conflict",
+        "risky-action"
+      ],
+      "severity": [
+        "mild",
+        "medium"
+      ]
+    },
+    {
+      "file": "db97b328c9adbefde791a7be0176ca6f.jpg",
+      "description": "A smiling monkey holding up one finger mockingly.",
+      "moods": [
+        "smug",
+        "mocking",
+        "judging",
+        "sarcastic"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "force-push",
+        "push-to-main"
+      ],
+      "severity": [
+        "mild",
+        "medium"
+      ]
+    },
+    {
+      "file": "e06ca3e2002d5718e2d5b9f71389043c.jpg",
+      "description": "Confused young man pointing at himself in disbelief.",
+      "moods": [
+        "shocked",
+        "confused",
+        "mocking"
+      ],
+      "verdicts": [
+        "push-to-main",
+        "risky-action",
+        "merge-conflict"
+      ],
+      "severity": [
+        "mild",
+        "medium"
+      ]
+    },
+    {
+      "file": "e43e595c195096e46a3a34538461bb50.jpg",
+      "description": "IShowSpeed with eyes closed and a smug, knowing smile.",
+      "moods": [
+        "smug",
+        "mocking",
+        "judging",
+        "sarcastic"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "risky-action",
+        "force-push"
+      ],
+      "severity": [
+        "mild",
+        "medium"
+      ]
+    },
+    {
+      "file": "e5a00bb885be24479d816183057df974.jpg",
+      "description": "Smug character writing a masterpiece with a quill.",
+      "moods": [
+        "smug",
+        "mocking",
+        "sarcastic",
+        "judging"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "ed365740f4be1c4a4c84561483d771d1.jpg",
+      "description": "Distorted Ellie looking skeptical and judging your bad code.",
+      "moods": [
+        "disappointed",
+        "judging",
+        "shocked",
+        "confused",
+        "mocking"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "f018d78689455e51ad9eda13207e4709.jpg",
+      "description": "A pixelated character screaming and crying in extreme distress.",
+      "moods": [
+        "angry",
+        "frustrated",
+        "crying",
+        "panicking"
+      ],
+      "verdicts": [
+        "commit-size",
+        "risky-action",
+        "force-push",
+        "push-to-main",
+        "merge-conflict"
+      ],
+      "severity": [
+        "savage"
+      ]
+    },
+    {
+      "file": "f3420241b905d2240a3c44f74c025d9c.jpg",
+      "description": "Man crying and praying in extreme emotional distress.",
+      "moods": [
+        "crying",
+        "panicking",
+        "disappointed",
+        "frustrated"
+      ],
+      "verdicts": [
+        "merge-conflict",
+        "force-push",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "facepalm.jpeg",
+      "description": "Classical statue facepalming in absolute despair.",
+      "moods": [
+        "disappointed",
+        "frustrated",
+        "facepalm",
+        "tired",
+        "judging"
+      ],
+      "verdicts": [
+        "commit-message",
+        "branch-name",
+        "commit-size",
+        "force-push",
+        "push-to-main",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "IMG_5518.jpg",
+      "description": "Sarcastic 'tears of joy' over a painful Git disaster.",
+      "moods": [
+        "sarcastic",
+        "mocking",
+        "crying",
+        "disappointed",
+        "frustrated"
+      ],
+      "verdicts": [
+        "merge-conflict",
+        "force-push",
+        "push-to-main",
+        "risky-action"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "IMG_5520.jpg",
+      "description": "Sarcastic man pointing up with text saying 'Actually BRILLIANT'.",
+      "moods": [
+        "smug",
+        "mocking",
+        "sarcastic",
+        "judging"
+      ],
+      "verdicts": [
+        "commit-message",
+        "risky-action",
+        "force-push",
+        "push-to-main",
+        "merge-conflict"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    },
+    {
+      "file": "JW-OFF-PLATFORM-ISHOWSPEED.webp",
+      "description": "IShowSpeed screaming in shock with hands on his head.",
+      "moods": [
+        "shocked",
+        "panicking",
+        "confused"
+      ],
+      "verdicts": [
+        "force-push",
+        "push-to-main",
+        "merge-conflict",
+        "risky-action",
+        "commit-size"
+      ],
+      "severity": [
+        "medium",
+        "savage"
+      ]
+    }
+  ]
+}

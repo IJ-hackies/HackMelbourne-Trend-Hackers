@@ -1,4 +1,4 @@
-export type { GitEventType, GitEvent, Score, Rank, Achievement, AchievementTrigger, AchievementDefinition, Roast, RoastResult, PlayerStats } from './types';
+export type { GitEventType, GitEvent, Score, Rank, Achievement, AchievementTrigger, AchievementDefinition, Roast, ReactionImageEntry, RoastResult, PlayerStats } from './types';
 export type { Severity, AnalysisVerdict, CommitMessageVerdict, BranchNameVerdict, CommitSizeVerdict, RiskyActionVerdict, SessionVerdict, AnyVerdict, AnalysisContext, AnalysisResult, CommitSizeStats } from './analysis';
 export { analyzeCommitMessage, analyzeBranchName, analyzeCommitSize, THRESHOLDS, classifyRiskyAction, analyzeSession, SESSION_THRESHOLDS, analyzeEvent } from './analysis';
 export { generateRoast, generateRoasts, generateCombinedRoast, generateTemplateRoast, generateHype } from './roasts';

@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 import type { RoastConfig, Provider } from '@git-gud/core';
+import * as fs from 'fs';
+import * as path from 'path';
+import type { RoastConfig, ReactionImageEntry } from '@git-gud/core';
 
 export interface GitGudConfig {
   enabled: boolean;
@@ -16,6 +19,7 @@ export interface GitGudConfig {
   xaiApiKey: string;
   xaiModel: string;
   voiceEnabled: boolean;
+  soundEnabled: boolean;
   commitMessageStyle: 'clean' | 'savage';
 }
 
@@ -36,6 +40,7 @@ export function getConfig(): GitGudConfig {
     xaiApiKey: c.get<string>('xaiApiKey', ''),
     xaiModel: c.get<string>('xaiModel', 'grok-3-mini'),
     voiceEnabled: c.get<boolean>('voiceEnabled', false),
+    soundEnabled: c.get<boolean>('soundEnabled', true),
     commitMessageStyle: c.get<'clean' | 'savage'>('commitMessageStyle', 'clean'),
   };
 }
@@ -52,6 +57,40 @@ export function getRoastConfig(config: GitGudConfig): RoastConfig | undefined {
   }
   if (p === 'openai' && config.openaiApiKey) {
     return { provider: 'openai', openai: { apiKey: config.openaiApiKey, model: config.openaiModel || undefined } };
+let cachedReactionImages: ReactionImageEntry[] | undefined;
+
+export function loadReactionImages(extensionPath: string): ReactionImageEntry[] {
+  if (cachedReactionImages) return cachedReactionImages;
+  try {
+    const jsonPath = path.join(extensionPath, 'media', 'reactions', 'reactions.json');
+    const manifest = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+    cachedReactionImages = manifest.images ?? [];
+  } catch {
+    cachedReactionImages = [];
+  }
+  return cachedReactionImages;
+}
+
+export function getRoastConfig(config: GitGudConfig, extensionPath?: string): RoastConfig | undefined {
+  console.log(`[GitGud] getRoastConfig: provider=${config.aiProvider}, ollamaKey=${config.ollamaApiKey ? 'SET(' + config.ollamaApiKey.slice(0, 4) + '...)' : 'EMPTY'}, geminiKey=${config.geminiApiKey ? 'SET(' + config.geminiApiKey.slice(0, 4) + '...)' : 'EMPTY'}`);
+
+  const reactionImages = extensionPath ? loadReactionImages(extensionPath) : [];
+
+  if (config.aiProvider === 'gemini' && config.geminiApiKey) {
+    console.log('[GitGud] Using Gemini provider');
+    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey }, reactionImages };
+  }
+  if (config.ollamaApiKey) {
+    console.log(`[GitGud] Using Ollama provider (model=${config.ollamaModel || 'default'}, url=${config.ollamaBaseUrl || 'default'})`);
+    return {
+      provider: config.aiProvider,
+      ollama: { apiKey: config.ollamaApiKey, model: config.ollamaModel || undefined, baseUrl: config.ollamaBaseUrl || undefined },
+      reactionImages,
+    };
+  }
+  if (config.geminiApiKey) {
+    console.log('[GitGud] Falling back to Gemini provider');
+    return { provider: 'gemini', gemini: { apiKey: config.geminiApiKey }, reactionImages };
   }
   if (p === 'xai' && config.xaiApiKey) {
     return { provider: 'xai', xai: { apiKey: config.xaiApiKey, model: config.xaiModel || undefined } };
