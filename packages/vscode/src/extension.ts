@@ -162,7 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
         recentCommitTimestamps: stateManager.getRecentCommitDates(),
       };
 
-      const roastConfig = getRoastConfig(config);
+      const roastConfig = getRoastConfig(config, context.extensionUri.fsPath);
       const result = await evaluate(event, playerState, analysisContext, roastConfig);
 
       playerState = await stateManager.saveAfterEvaluation(event, result, playerState);
