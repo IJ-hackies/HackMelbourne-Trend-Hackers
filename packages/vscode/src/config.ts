@@ -19,6 +19,7 @@ export interface GitGudConfig {
   xaiModel: string;
   voiceEnabled: boolean;
   soundEnabled: boolean;
+  soundVolume: number;
   commitMessageStyle: 'clean' | 'savage';
 }
 
@@ -40,6 +41,7 @@ export function getConfig(): GitGudConfig {
     xaiModel: c.get<string>('xaiModel', 'grok-3-mini'),
     voiceEnabled: c.get<boolean>('voiceEnabled', false),
     soundEnabled: c.get<boolean>('soundEnabled', true),
+    soundVolume: c.get<number>('soundVolume', 0.3),
     commitMessageStyle: c.get<'clean' | 'savage'>('commitMessageStyle', 'clean'),
   };
 }

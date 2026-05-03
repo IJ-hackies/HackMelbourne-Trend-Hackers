@@ -20,4 +20,4 @@ jobs:
         working-directory: packages/vscode
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: npx @vscode/vsce publish
+        run: npx @vscode/vsce publish --no-dependencies

@@ -24,6 +24,7 @@ export interface SidebarData {
     totalBranchSwitches: number;
   };
   soundEnabled: boolean;
+  soundVolume: number;
   aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai';
   ollamaApiKey: string;
   ollamaModel: string;
@@ -44,7 +45,7 @@ export interface SidebarData {
 export type SidebarMessage =
   | { type: 'ready' }
   | { type: 'runCommand'; command: string }
-  | { type: 'saveSettings'; aiProvider: string; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: string }
+  | { type: 'saveSettings'; aiProvider: string; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: string; soundEnabled: boolean; soundVolume: number }
   | { type: 'sc:generate' }
   | { type: 'sc:commit'; message: string; push?: boolean; amend?: boolean }
   | { type: 'sc:pullAndPush' }
@@ -106,6 +107,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         await cfg.update('xaiApiKey', msg.xaiApiKey || '', true);
         await cfg.update('xaiModel', msg.xaiModel || 'grok-3-mini', true);
         await cfg.update('commitMessageStyle', msg.commitMessageStyle || 'clean', true);
+        await cfg.update('soundEnabled', !!msg.soundEnabled, true);
+        const vol = typeof msg.soundVolume === 'number' ? Math.max(0, Math.min(1, msg.soundVolume)) : 0.3;
+        await cfg.update('soundVolume', vol, true);
       } else if (msg.type === 'sc:generate') {
         await this._handlers?.onSCGenerate();
       } else if (msg.type === 'sc:commit') {
@@ -123,7 +127,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   buildSidebarData(
     playerState: PlayerState,
     eventHistory: StoredEvent[],
-    configFields: { aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: 'clean' | 'savage'; soundEnabled: boolean },
+    configFields: { aiProvider: 'ollama' | 'gemini' | 'claude' | 'openai' | 'xai'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; geminiModel: string; claudeApiKey: string; claudeModel: string; openaiApiKey: string; openaiModel: string; xaiApiKey: string; xaiModel: string; commitMessageStyle: 'clean' | 'savage'; soundEnabled: boolean; soundVolume: number },
     sourceControl: SourceControlSnapshot,
     collapsed: Record<string, boolean>,
   ): SidebarData {
@@ -154,6 +158,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         totalBranchSwitches: playerState.stats.totalBranchSwitches,
       },
       soundEnabled: configFields.soundEnabled,
+      soundVolume: configFields.soundVolume,
       aiProvider: configFields.aiProvider,
       ollamaApiKey: configFields.ollamaApiKey,
       ollamaModel: configFields.ollamaModel,
@@ -710,6 +715,77 @@ select option:checked, select option:hover {
 .settings-status.connected { color: var(--accent); }
 .settings-status.disconnected { color: var(--mute); }
 
+/* Sound section layout */
+.sound-toggle-row {
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none;
+  font-family: var(--mono); font-size: 10.5px;
+  font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--mute);
+  margin-bottom: 5px;
+}
+.sound-toggle-text { line-height: 14px; }
+.sound-volume-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 6px;
+}
+.sound-volume-label {
+  font-family: var(--mono); font-size: 10.5px; color: var(--mute);
+  min-width: 34px; text-align: right; flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+
+/* Sound checkbox — lime brand palette */
+.settings-check {
+  appearance: none; -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-radius: 3px; cursor: pointer;
+  position: relative; flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+.settings-check:hover { border-color: var(--accent); }
+.settings-check:checked { background: var(--accent); border-color: var(--accent); }
+.settings-check:checked::after {
+  content: ''; position: absolute;
+  left: 4px; top: 1px; width: 3px; height: 7px;
+  border: solid var(--bg); border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.settings-check:focus { outline: none; box-shadow: 0 0 0 2px rgba(200,255,0,0.25); }
+
+/* Sound volume slider — lime brand palette */
+.settings-range {
+  appearance: none; -webkit-appearance: none;
+  flex: 1; min-width: 0; height: 4px;
+  background: var(--line);
+  border-radius: 2px; outline: none; cursor: pointer;
+  margin: 0;
+}
+.settings-range::-webkit-slider-runnable-track {
+  height: 4px; background: var(--line); border-radius: 2px;
+}
+.settings-range::-moz-range-track {
+  height: 4px; background: var(--line); border-radius: 2px; border: none;
+}
+.settings-range::-webkit-slider-thumb {
+  appearance: none; -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: var(--accent);
+  border: none; border-radius: 50%;
+  margin-top: -5px; cursor: pointer;
+  transition: background 0.12s, transform 0.12s;
+}
+.settings-range::-webkit-slider-thumb:hover { background: var(--accent-2); transform: scale(1.1); }
+.settings-range::-moz-range-thumb {
+  width: 14px; height: 14px; background: var(--accent);
+  border: none; border-radius: 50%; cursor: pointer;
+  transition: background 0.12s, transform 0.12s;
+}
+.settings-range::-moz-range-thumb:hover { background: var(--accent-2); transform: scale(1.1); }
+.settings-range:focus { box-shadow: 0 0 0 2px rgba(200,255,0,0.2); border-radius: 4px; }
+
 /* ACTIONS */
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .action-btn {
@@ -819,6 +895,7 @@ select option:checked, select option:hover {
   const vscode = acquireVsCodeApi();
   const root = document.getElementById('root');
   const REACTIONS_BASE = "${reactionsBaseUri}";
+  const FAHHH_URL = "${fahhhUri}";
 
   const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#c8ff00' };
 
@@ -861,6 +938,7 @@ select option:checked, select option:hover {
 
   let state = null;
   let soundEnabled = true;
+  let soundVolume = 0.3;
   // Local UI state preserved across re-renders:
   let scMessage = '';
   let scGenerating = false;
@@ -1156,6 +1234,16 @@ select option:checked, select option:hover {
     h += '<option value="savage"' + (d.commitMessageStyle === 'savage' ? ' selected' : '') + '>Savage (toxic-coach)</option>';
     h += '</select></div>';
 
+    var volPct = Math.round((typeof d.soundVolume === 'number' ? d.soundVolume : 0.3) * 100);
+    h += '<div class="settings-field">';
+    h += '<label class="sound-toggle-row">';
+    h += '<input type="checkbox" class="settings-check" id="cfg-sound-enabled"' + (d.soundEnabled ? ' checked' : '') + ' />';
+    h += '<span class="sound-toggle-text">Sound effects</span></label>';
+    h += '<div class="sound-volume-row">';
+    h += '<input type="range" class="settings-range" id="cfg-sound-volume" min="0" max="100" step="1" value="' + volPct + '" />';
+    h += '<span class="sound-volume-label" id="cfg-sound-volume-label">' + volPct + '%</span>';
+    h += '</div></div>';
+
     // Hidden inputs preserve unselected providers' keys/models so they survive save round-trips.
     var hidden = [
       ['cfg-ollama-key', d.ollamaApiKey],
@@ -1366,6 +1454,8 @@ select option:checked, select option:hover {
         xaiApiKey: buckets.xai.key,
         xaiModel: buckets.xai.model,
         commitMessageStyle: v('cfg-commit-style'),
+        soundEnabled: !!(document.getElementById('cfg-sound-enabled') || {}).checked,
+        soundVolume: Math.max(0, Math.min(1, (parseInt(v('cfg-sound-volume'), 10) || 0) / 100)),
       });
       const saved = document.getElementById('settings-saved');
       if (saved) { saved.classList.add('show'); setTimeout(() => saved.classList.remove('show'), 2000); }
@@ -1375,6 +1465,20 @@ select option:checked, select option:hover {
     const provSel = document.getElementById('cfg-provider');
     if (provSel) provSel.addEventListener('change', () => {
       if (saveBtn) saveBtn.click();
+    });
+
+    // Live volume label + apply on release
+    const volSlider = document.getElementById('cfg-sound-volume');
+    const volLabel = document.getElementById('cfg-sound-volume-label');
+    if (volSlider && volLabel) {
+      volSlider.addEventListener('input', () => {
+        volLabel.textContent = volSlider.value + '%';
+        soundVolume = (parseInt(volSlider.value, 10) || 0) / 100;
+      });
+    }
+    const soundChk = document.getElementById('cfg-sound-enabled');
+    if (soundChk) soundChk.addEventListener('change', () => {
+      soundEnabled = !!soundChk.checked;
     });
   }
 
@@ -1390,15 +1494,18 @@ select option:checked, select option:hover {
   }
 
   function playSound(type) {
-    if (!soundEnabled) return;
+    if (!soundEnabled || soundVolume <= 0) return;
     try {
       const ctx = new AudioContext();
+      const master = ctx.createGain();
+      master.gain.value = soundVolume;
+      master.connect(ctx.destination);
       switch (type) {
         case 'rank-up': {
           const notes = [523, 659, 784, 1047];
           notes.forEach((freq, i) => {
             const o = ctx.createOscillator(); const g = ctx.createGain();
-            o.type = 'square'; o.frequency.value = freq; o.connect(g); g.connect(ctx.destination);
+            o.type = 'square'; o.frequency.value = freq; o.connect(g); g.connect(master);
             g.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1);
             g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.2);
             o.start(ctx.currentTime + i * 0.1); o.stop(ctx.currentTime + i * 0.1 + 0.2);
@@ -1409,7 +1516,7 @@ select option:checked, select option:hover {
           const notes = [523, 466, 415, 349];
           notes.forEach((freq, i) => {
             const o = ctx.createOscillator(); const g = ctx.createGain();
-            o.type = 'sawtooth'; o.frequency.value = freq; o.connect(g); g.connect(ctx.destination);
+            o.type = 'sawtooth'; o.frequency.value = freq; o.connect(g); g.connect(master);
             g.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.12);
             g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.25);
             o.start(ctx.currentTime + i * 0.12); o.stop(ctx.currentTime + i * 0.12 + 0.25);
@@ -1419,7 +1526,7 @@ select option:checked, select option:hover {
         case 'achievement': {
           [523, 659, 784].forEach(freq => {
             const o = ctx.createOscillator(); const g = ctx.createGain();
-            o.type = 'sine'; o.frequency.value = freq; o.connect(g); g.connect(ctx.destination);
+            o.type = 'sine'; o.frequency.value = freq; o.connect(g); g.connect(master);
             g.gain.setValueAtTime(0.12, ctx.currentTime);
             g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
             o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.5);
@@ -1428,7 +1535,7 @@ select option:checked, select option:hover {
         }
         case 'critical': {
           const o = ctx.createOscillator(); const g = ctx.createGain();
-          o.type = 'square'; o.frequency.value = 120; o.connect(g); g.connect(ctx.destination);
+          o.type = 'square'; o.frequency.value = 120; o.connect(g); g.connect(master);
           g.gain.setValueAtTime(0.2, ctx.currentTime);
           g.gain.setValueAtTime(0.0, ctx.currentTime + 0.08);
           g.gain.setValueAtTime(0.2, ctx.currentTime + 0.12);
@@ -1438,10 +1545,18 @@ select option:checked, select option:hover {
         }
         case 'event': {
           const o = ctx.createOscillator(); const g = ctx.createGain();
-          o.type = 'sine'; o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+          o.type = 'sine'; o.frequency.value = 880; o.connect(g); g.connect(master);
           g.gain.setValueAtTime(0.1, ctx.currentTime);
           g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
           o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.12);
+          break;
+        }
+        case 'fahhh':
+        case 'dayum': {
+          if (!FAHHH_URL) break;
+          const a = new Audio(FAHHH_URL);
+          a.volume = Math.max(0, Math.min(1, soundVolume));
+          a.play().catch(err => console.error('[GitGud] audio play failed:', err));
           break;
         }
       }
@@ -1452,6 +1567,7 @@ select option:checked, select option:hover {
     const msg = ev.data;
     if (msg.type === 'updateState') {
       soundEnabled = msg.data.soundEnabled;
+      soundVolume = typeof msg.data.soundVolume === 'number' ? msg.data.soundVolume : 0.3;
       render(msg.data);
     } else if (msg.type === 'playSound') {
       playSound(msg.sound);

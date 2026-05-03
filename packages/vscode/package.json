@@ -72,6 +72,8 @@
         "gitgud.xaiApiKey": { "type": "string", "default": "", "description": "xAI (Grok) API key." },
         "gitgud.xaiModel": { "type": "string", "default": "grok-3-mini", "enum": ["grok-4", "grok-3", "grok-3-mini"], "description": "Grok model." },
         "gitgud.voiceEnabled": { "type": "boolean", "default": false, "description": "Speak savage roasts and rank-ups out loud (browser SpeechSynthesis)." },
+        "gitgud.soundEnabled": { "type": "boolean", "default": true, "description": "Play sound effects on Git events." },
+        "gitgud.soundVolume": { "type": "number", "default": 0.3, "minimum": 0, "maximum": 1, "description": "Sound effect volume (0.0 to 1.0)." },
         "gitgud.roastIntensity": { "type": "string", "enum": ["mild", "medium", "savage"], "default": "savage", "description": "Roast severity level." },
         "gitgud.notificationsEnabled": { "type": "boolean", "default": true, "description": "Show notification popups." },
         "gitgud.teamCode": { "type": "string", "default": "", "description": "Team code for shared leaderboard." },

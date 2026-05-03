@@ -63,6 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
         xaiModel: config.xaiModel,
         commitMessageStyle: config.commitMessageStyle,
         soundEnabled: config.soundEnabled,
+        soundVolume: config.soundVolume,
       },
       sourceControl.snapshot(),
       getCollapsed(),
