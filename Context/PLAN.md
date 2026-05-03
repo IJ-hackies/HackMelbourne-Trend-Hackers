@@ -4,7 +4,7 @@ Hackathon-aligned roadmap. Stages 1 and 2 are shipped; later stages are post-hac
 
 ## Stage 1 — Core MVP ✅
 
-Shared logic + VS Code extension with sidebar dashboard, scoring, roasts (template + Ollama + Gemini), achievements, personality, suffering index, sound effects, and per-block merge conflict tracking.
+Shared logic + VS Code extension with sidebar dashboard, scoring, roasts (template + Ollama + Gemini), achievements, personality, sound effects, and per-block merge conflict tracking.
 
 ## Stage 2 — Hackathon shareability ✅
 
@@ -15,6 +15,8 @@ Features that turn the extension into a demoable, shareable, social-media-friend
 - **Weekly Hygiene Report** webview panel for the "useful" angle
 - **Voice roasts** (`gitgud.voiceEnabled`) for memeable audio moments
 - **Sidebar Actions card** — primary surface for all new commands
+- **In-sidebar Source Control card** — branch picker, AI-generated 1-line commit messages (`clean` / `savage` style toggle), split Commit / Commit & Push / Amend button, live changes list via `vscode.git` API
+- **Sidebar UX pass** — collapsible cards (all except Rank + Personality) with persisted state, animated expand/collapse, redesigned Stats list, removal of the Suffering Index
 
 ## Stage 3 — Polish & distribution
 
@@ -34,4 +36,4 @@ Originally planned as Stage 2; deprioritized for the hackathon. Surface clear er
 
 ## Stage 6 — Stretch
 
-Multiplayer / team features: shared leaderboards, weekly rivalries, team-level Teammate Suffering Index aggregation.
+Multiplayer / team features: shared leaderboards, weekly rivalries, team-level aggregation.

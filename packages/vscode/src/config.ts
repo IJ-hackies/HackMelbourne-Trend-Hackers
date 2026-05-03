@@ -9,6 +9,7 @@ export interface GitGudConfig {
   ollamaBaseUrl: string;
   geminiApiKey: string;
   voiceEnabled: boolean;
+  commitMessageStyle: 'clean' | 'savage';
 }
 
 export function getConfig(): GitGudConfig {
@@ -21,6 +22,7 @@ export function getConfig(): GitGudConfig {
     ollamaBaseUrl: c.get<string>('ollamaBaseUrl', ''),
     geminiApiKey: c.get<string>('geminiApiKey', ''),
     voiceEnabled: c.get<boolean>('voiceEnabled', false),
+    commitMessageStyle: c.get<'clean' | 'savage'>('commitMessageStyle', 'clean'),
   };
 }
 

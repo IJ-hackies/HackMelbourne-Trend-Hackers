@@ -58,7 +58,8 @@
         "gitgud.roastIntensity": { "type": "string", "enum": ["mild", "medium", "savage"], "default": "savage", "description": "Roast severity level." },
         "gitgud.notificationsEnabled": { "type": "boolean", "default": true, "description": "Show notification popups." },
         "gitgud.teamCode": { "type": "string", "default": "", "description": "Team code for shared leaderboard." },
-        "gitgud.syncUrl": { "type": "string", "default": "http://localhost:3000/api/sync", "description": "URL to sync stats to web leaderboard." }
+        "gitgud.syncUrl": { "type": "string", "default": "http://localhost:3000/api/sync", "description": "URL to sync stats to web leaderboard." },
+        "gitgud.commitMessageStyle": { "type": "string", "default": "clean", "enum": ["clean", "savage"], "description": "Tone for AI-generated commit messages: clean (Conventional Commits) or savage (toxic-coach roast)." }
       }
     }
   },

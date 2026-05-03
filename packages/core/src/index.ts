@@ -8,8 +8,8 @@ export { calculateScore, SEVERITY_MULTIPLIER, CATEGORY_POINTS } from './scoring'
 export { RANK_LADDER, evaluateRank } from './ranks';
 export type { RankEvaluation } from './ranks';
 export { ACHIEVEMENTS, checkAchievements } from './achievements';
-export { calculateSuffering, classifyPersonality } from './personality';
-export type { SufferingResult, PersonalityResult } from './personality';
+export { classifyPersonality } from './personality';
+export type { PersonalityResult } from './personality';
 export { evaluate } from './evaluate';
 export type { PlayerState, EvaluationResult } from './evaluate';
 export { generateWeeklyReport } from './reports/weekly';

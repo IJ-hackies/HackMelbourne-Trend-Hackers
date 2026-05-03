@@ -1,7 +1,6 @@
 import type { GitEvent, Rank, Roast, Score, Achievement, PlayerStats } from './types';
 import type { AnalysisContext, AnalysisResult } from './analysis/types';
 import type { RankEvaluation } from './ranks/evaluator';
-import type { SufferingResult } from './personality/suffering';
 import type { PersonalityResult } from './personality/classifier';
 import type { RoastConfig } from './roasts/generator';
 import { analyzeEvent } from './analysis/analyze-event';
@@ -9,7 +8,6 @@ import { generateRoasts, generateCombinedRoast } from './roasts/generator';
 import { calculateScore } from './scoring/engine';
 import { evaluateRank } from './ranks/evaluator';
 import { checkAchievements } from './achievements/tracker';
-import { calculateSuffering } from './personality/suffering';
 import { classifyPersonality } from './personality/classifier';
 
 export interface PlayerState {
@@ -26,7 +24,6 @@ export interface EvaluationResult {
   score: Score;
   rankEvaluation: RankEvaluation;
   achievements: Achievement[];
-  suffering: SufferingResult;
   personality: PersonalityResult;
 }
 
@@ -57,8 +54,6 @@ export async function evaluate(
 
   const achievements = checkAchievements(statsWithScore, playerState.unlockedAchievements);
 
-  const suffering = calculateSuffering(statsWithScore);
-
   const personality = classifyPersonality(statsWithScore);
 
   return {
@@ -68,7 +63,6 @@ export async function evaluate(
     score,
     rankEvaluation,
     achievements,
-    suffering,
     personality,
   };
 }
