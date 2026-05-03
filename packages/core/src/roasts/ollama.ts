@@ -8,7 +8,7 @@ export interface OllamaConfig {
   baseUrl?: string;
 }
 
-const DEFAULT_MODEL = 'kimi-k2.6:cloud';
+const DEFAULT_MODEL = 'deepseek-v4-flash:cloud';
 const DEFAULT_BASE_URL = 'https://ollama.com/api';
 
 const SIX_SEVEN_RE = /\b(67|6-7|6\.7|six[\s-]?seven)\b/i;

@@ -51,7 +51,7 @@
         "gitgud.enabled": { "type": "boolean", "default": true, "description": "Enable Git Gud monitoring." },
         "gitgud.aiProvider": { "type": "string", "default": "ollama", "enum": ["ollama", "gemini"], "description": "AI provider for roast generation." },
         "gitgud.ollamaApiKey": { "type": "string", "default": "", "description": "API key for Ollama AI roasts." },
-        "gitgud.ollamaModel": { "type": "string", "default": "", "description": "Ollama model (default: kimi-k2.6:cloud)." },
+        "gitgud.ollamaModel": { "type": "string", "default": "", "description": "Ollama model (default: deepseek-v4-flash:cloud)." },
         "gitgud.ollamaBaseUrl": { "type": "string", "default": "", "description": "Ollama API base URL." },
         "gitgud.geminiApiKey": { "type": "string", "default": "", "description": "Gemini API key." },
         "gitgud.voiceEnabled": { "type": "boolean", "default": false, "description": "Speak savage roasts and rank-ups out loud (browser SpeechSynthesis)." },

@@ -38,7 +38,7 @@ async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 
 async function callOllama(cfg: GitGudConfig, system: string, user: string): Promise<string> {
   const baseUrl = cfg.ollamaBaseUrl || 'https://ollama.com/v1';
-  const model = cfg.ollamaModel || 'kimi-k2.6:cloud';
+  const model = cfg.ollamaModel || 'deepseek-v4-flash:cloud';
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {

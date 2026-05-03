@@ -818,7 +818,7 @@ body {
     h += '<input class="settings-input" type="password" id="cfg-apikey" value="' + esc(d.ollamaApiKey) + '" placeholder="Enter Ollama API key..." /></div>';
 
     h += '<div class="settings-field"><label class="settings-label">Ollama Model</label>';
-    h += '<input class="settings-input" type="text" id="cfg-model" value="' + esc(d.ollamaModel) + '" placeholder="kimi-k2.6:cloud" />';
+    h += '<input class="settings-input" type="text" id="cfg-model" value="' + esc(d.ollamaModel) + '" placeholder="deepseek-v4-flash:cloud" />';
     h += '<div class="settings-hint">Leave blank for default</div></div>';
 
     h += '<div class="settings-field"><label class="settings-label">Ollama Base URL</label>';
