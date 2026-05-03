@@ -109,7 +109,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   buildSidebarData(
     playerState: PlayerState,
     eventHistory: StoredEvent[],
-    configFields: { aiProvider: 'ollama' | 'gemini'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; commitMessageStyle: 'clean' | 'savage' },
+    configFields: { aiProvider: 'ollama' | 'gemini'; ollamaApiKey: string; ollamaModel: string; ollamaBaseUrl: string; geminiApiKey: string; commitMessageStyle: 'clean' | 'savage'; soundEnabled: boolean },
     sourceControl: SourceControlSnapshot,
     collapsed: Record<string, boolean>,
   ): SidebarData {
@@ -139,7 +139,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         commitsInCurrentSession: playerState.stats.commitsInCurrentSession,
         totalBranchSwitches: playerState.stats.totalBranchSwitches,
       },
-      soundEnabled: true,
+      soundEnabled: configFields.soundEnabled,
       aiProvider: configFields.aiProvider,
       ollamaApiKey: configFields.ollamaApiKey,
       ollamaModel: configFields.ollamaModel,
@@ -164,6 +164,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  playSound(sound: 'fahhh' | 'dayum' | 'rank-up' | 'rank-down' | 'achievement' | 'critical' | 'event'): void {
+    this.postMessage({ type: 'playSound', sound });
+  }
+
   focus(): void {
     if (this._view) {
       this._view.show(true);
@@ -179,6 +183,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     const reactionsBaseUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, 'media', 'reactions')
     );
+    const fahhhUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'sounds', 'fahhh.mpeg'));
 
     return /*html*/ `<!DOCTYPE html>
 <html lang="en">
@@ -186,7 +191,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${webview.cspSource};" />
+  content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}'; media-src *; img-src ${webview.cspSource};" />
 <style nonce="${nonce}">
 :root {
   --rank-bronze: #cd7f32;
