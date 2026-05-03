@@ -181,29 +181,24 @@ export function activate(context: vscode.ExtensionContext) {
 
     const SILENT = new Set(['conflict-block-preview', 'file-fully-resolved']);
     if (!SILENT.has(event.type)) {
-      // Sound effects
+      // Sound effects: rank-change/achievement get their dedicated tones,
+      // otherwise route by score delta — positive plays a random "good" sound,
+      // negative plays a random "bad" sound, zero stays silent.
       if (config.soundEnabled) {
-        const highest = result.analysis.highestSeverity;
-        const evType = event.type;
         const hasNewAchievements = newAchievements.length > 0;
         const { promoted, demoted } = result.rankEvaluation;
+        const delta = result.score.delta;
 
-        // Priority: rank change > achievement > event severity
         if (promoted) {
           sidebarProvider.playSound('rank-up');
         } else if (demoted) {
           sidebarProvider.playSound('rank-down');
         } else if (hasNewAchievements) {
           sidebarProvider.playSound('achievement');
-        } else if (highest === 'critical') {
-          sidebarProvider.playSound('fahhh');
-        } else if (highest === 'warning') {
-          sidebarProvider.playSound('fahhh');
-        } else if (highest === 'info') {
-          // Good/clean commits
-          sidebarProvider.playSound('dayum');
-        } else {
-          sidebarProvider.playSound('event');
+        } else if (delta > 0) {
+          sidebarProvider.playSoundCategory('good');
+        } else if (delta < 0) {
+          sidebarProvider.playSoundCategory('bad');
         }
       }
 

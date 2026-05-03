@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { RANK_LADDER, checkAchievements, classifyPersonality } from '@git-gud/core';
 import type { PlayerState } from '@git-gud/core';
 import type { StoredEvent } from '../storage/state-manager';
@@ -194,6 +196,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     this.postMessage({ type: 'playSound', sound });
   }
 
+  playSoundCategory(category: 'good' | 'bad'): void {
+    this.postMessage({ type: 'playSoundCategory', category });
+  }
+
   focus(): void {
     if (this._view) {
       this._view.show(true);
@@ -210,6 +216,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       vscode.Uri.joinPath(this._extensionUri, 'media', 'reactions')
     );
     const fahhhUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'sounds', 'fahhh.mpeg'));
+
+    const listSounds = (folder: string): string[] => {
+      try {
+        const dir = path.join(this._extensionUri.fsPath, 'media', 'sounds', folder);
+        return fs.readdirSync(dir)
+          .filter(f => /\.(mp3|mpeg|wav|ogg|m4a)$/i.test(f))
+          .map(f => webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'sounds', folder, f)).toString());
+      } catch {
+        return [];
+      }
+    };
+    const goodSounds = listSounds('Good');
+    const badSounds = listSounds('Bad');
 
     return /*html*/ `<!DOCTYPE html>
 <html lang="en">
@@ -896,6 +915,8 @@ select option:checked, select option:hover {
   const root = document.getElementById('root');
   const REACTIONS_BASE = "${reactionsBaseUri}";
   const FAHHH_URL = "${fahhhUri}";
+  const GOOD_SOUNDS = ${JSON.stringify(goodSounds)};
+  const BAD_SOUNDS = ${JSON.stringify(badSounds)};
 
   const RANK_COLORS = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#00cec9', diamond: '#c8ff00' };
 
@@ -1493,6 +1514,18 @@ select option:checked, select option:hover {
     vscode.postMessage({ type: 'sc:commit', message, push, amend });
   }
 
+  function playSoundCategory(category) {
+    if (!soundEnabled || soundVolume <= 0) return;
+    const pool = category === 'good' ? GOOD_SOUNDS : (category === 'bad' ? BAD_SOUNDS : []);
+    if (!pool || pool.length === 0) return;
+    const url = pool[Math.floor(Math.random() * pool.length)];
+    try {
+      const a = new Audio(url);
+      a.volume = Math.max(0, Math.min(1, soundVolume));
+      a.play().catch(err => console.error('[GitGud] sound play failed:', err));
+    } catch (_) {}
+  }
+
   function playSound(type) {
     if (!soundEnabled || soundVolume <= 0) return;
     try {
@@ -1571,6 +1604,8 @@ select option:checked, select option:hover {
       render(msg.data);
     } else if (msg.type === 'playSound') {
       playSound(msg.sound);
+    } else if (msg.type === 'playSoundCategory') {
+      playSoundCategory(msg.category);
     } else if (msg.type === 'speakRoast' && msg.text) {
       try {
         if (typeof speechSynthesis !== 'undefined') {
