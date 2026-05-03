@@ -33,15 +33,14 @@
     </p>
     <div class="cta-row">
       <a class="btn primary" href="vscode:extension/git-gud.git-gud-vscode">
-        <span>Open in VS Code</span><span class="arrow">→</span>
+        <span>Install in VS Code</span><span class="arrow">→</span>
       </a>
-      <a class="btn ghost" href="https://github.com/IJ-hackies/HackMelbourne-Trend-Hackers#install">
-        Install instructions
+      <a class="btn ghost" href="https://marketplace.visualstudio.com/items?itemName=git-gud.git-gud-vscode" target="_blank" rel="noopener">
+        View on Marketplace
       </a>
     </div>
     <p class="footnote">
-      Not on Marketplace yet — install via VSIX from the
-      <a href="https://github.com/IJ-hackies/HackMelbourne-Trend-Hackers">repo</a>.
+      v0.1.0 · MIT · <a href="https://github.com/IJ-hackies/HackMelbourne-Trend-Hackers">source on GitHub</a>
     </p>
   </section>
 
@@ -85,12 +84,27 @@
 
   <section id="install" class="install">
     <h2>Install</h2>
-    <ol>
-      <li>Clone <code>IJ-hackies/HackMelbourne-Trend-Hackers</code></li>
-      <li><code>npm install</code> at the repo root</li>
-      <li><code>npm run build -w packages/vscode</code></li>
-      <li>Open <code>packages/vscode</code> in VS Code, press <kbd>F5</kbd></li>
-    </ol>
+    <p class="install-lede">Three ways. Pick your fighter.</p>
+    <div class="install-grid">
+      <div>
+        <h3>One-click</h3>
+        <p>Hit the install button up top, or open this link in VS Code:</p>
+        <code class="block">vscode:extension/git-gud.git-gud-vscode</code>
+      </div>
+      <div>
+        <h3>From inside VS Code</h3>
+        <p>Open the Extensions panel and search:</p>
+        <code class="block">git gud coach</code>
+      </div>
+      <div>
+        <h3>Command line</h3>
+        <p>If you live in the terminal:</p>
+        <code class="block">code --install-extension git-gud.git-gud-vscode</code>
+      </div>
+    </div>
+    <p class="install-foot">
+      Building from source? See <a href="https://github.com/IJ-hackies/HackMelbourne-Trend-Hackers">the repo</a>.
+    </p>
   </section>
 </main>
 
